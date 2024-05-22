@@ -3,7 +3,9 @@ package com.roumai.myodecoder.device.ble
 import android.os.ParcelUuid
 
 interface BleDelegate {
-    suspend fun connect(autoReconnect: Boolean): Boolean
+    val name: String
+    val mac: String
+    suspend fun connect(): Boolean
 
     suspend fun isConnected(): Boolean
 
@@ -21,9 +23,6 @@ interface BleDelegate {
 
     suspend fun mtu(mtu: Int): Boolean
 
-    suspend fun deviceName(): String?
-
-    suspend fun deviceMacAddress(): String?
 }
 
 data class BleDelegateKey(

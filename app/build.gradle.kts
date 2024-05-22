@@ -66,4 +66,7 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    /* ble connect */
+    implementation("com.github.Jasonchenlijian:FastBle:2.4.0")
 }
