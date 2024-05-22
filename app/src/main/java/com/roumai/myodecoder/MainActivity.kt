@@ -1,31 +1,48 @@
 package com.roumai.myodecoder
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import android.view.MotionEvent
+import android.view.View
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import com.roumai.myodecoder.ui.theme.MyoDecoderTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        hideSystemUI()
         setContent {
             MyoDecoderTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInteropFilter {
+                            if (it.action == MotionEvent.ACTION_DOWN) {
+                                hideSystemUI()
+                            }
+                            false
+                        },
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Greeting("Android")
                 }
             }
         }
+    }
+
+    fun hideSystemUI() {
+        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
     }
 }
 
@@ -35,12 +52,4 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
         text = "Hello $name!",
         modifier = modifier
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    MyoDecoderTheme {
-        Greeting("Android")
-    }
 }
