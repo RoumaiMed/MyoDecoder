@@ -9,7 +9,7 @@ private val KEY_BATTERY = BleDelegateKey(
 
 open class CommonBleService(open val delegate: BleDelegate) {
     suspend fun connect(): Boolean {
-        val success = delegate.connect(true)
+        val success = delegate.connect()
         if (success) {
             // update mtu.
             return delegate.mtu(502)
