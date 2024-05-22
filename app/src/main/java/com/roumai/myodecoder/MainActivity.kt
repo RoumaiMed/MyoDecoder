@@ -1,6 +1,7 @@
 package com.roumai.myodecoder
 
 import android.os.Bundle
+import android.view.MotionEvent
 import android.view.View
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
@@ -9,17 +10,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import com.roumai.myodecoder.ui.theme.MyoDecoderTheme
 
 class MainActivity : AppCompatActivity() {
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         hideSystemUI()
         setContent {
             MyoDecoderTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInteropFilter {
+                            if (it.action == MotionEvent.ACTION_DOWN) {
+                                hideSystemUI()
+                            }
+                            false
+                        },
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Greeting("Android")
