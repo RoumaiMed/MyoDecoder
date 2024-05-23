@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">MyoDecoder</string>
+    <string name="key_select_devices">Select Bluetooth Devices</string>
 </resources>
