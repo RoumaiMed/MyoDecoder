@@ -14,7 +14,7 @@ import java.util.UUID
 /**
  * 靠 UUID 来区分蓝牙服务是否为 MyoDecoder
  */
-private val SERVICE_UUID = UUID.fromString("0000ACE0-0000-1000-8000-00805f9b34fb")
+private val SERVICE_UUIDS = arrayOf(UUID.fromString("0000ACE0-0000-1000-8000-00805f9b34fb"))
 
 class MyoBleFinder(autoConnect: Boolean) {
     private var debug = false
@@ -23,7 +23,7 @@ class MyoBleFinder(autoConnect: Boolean) {
         BleManager.getInstance()
             .initScanRule(
                 BleScanRuleConfig.Builder()
-                    .setServiceUuids(arrayOf(SERVICE_UUID))
+                    .setServiceUuids(SERVICE_UUIDS)
                     .setAutoConnect(autoConnect)
                     .build()
             )
@@ -48,6 +48,9 @@ class MyoBleFinder(autoConnect: Boolean) {
 
                     override fun onScanResult(callbackType: Int, result: ScanResult?) {
                         val device = result?.device ?: return
+
+                        // filter uuid
+                        if (device.uuids?.any { it.uuid in SERVICE_UUIDS } != true) return
 
                         val ble = BleDevice(device)
                         // 去重 & filter
