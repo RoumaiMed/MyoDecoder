@@ -6,6 +6,7 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.os.ParcelUuid
 import com.clj.fastble.BleManager
 import com.clj.fastble.data.BleDevice
 import com.clj.fastble.scan.BleScanRuleConfig
@@ -19,20 +20,23 @@ import java.util.UUID
 /**
  * 靠 UUID 来区分蓝牙服务是否为 MyoDecoder
  */
-private val SERVICE_UUIDS = arrayOf(UUID.fromString("0000ACE0-0000-1000-8000-00805f9b34fb"))
+private val SERVICE_UUID = UUID.fromString("0000ACE0-0000-1000-8000-00805f9b34fb")
 
 class MyoBleFinder(autoConnect: Boolean) {
     private var debug = false
     private val scanner = BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner
     private var callback: OnFinderUpdate? = null
     private val devices = HashMap<String, BleDevice>()
-    companion object private val TIMEOUT = 12000
+
+    companion object private
+
+    val TIMEOUT = 12000
 
     init {
         BleManager.getInstance()
             .initScanRule(
                 BleScanRuleConfig.Builder()
-                    .setServiceUuids(SERVICE_UUIDS)
+                    .setServiceUuids(arrayOf(SERVICE_UUID))
                     .setAutoConnect(autoConnect)
                     .build()
             )
@@ -54,15 +58,17 @@ class MyoBleFinder(autoConnect: Boolean) {
                 timeout -= 1000
                 delay(1000)
             }
-            if (timeout > 0) {
+            if (timeout <= 0) {
+                scanner.stopScan(object : ScanCallback() {})
                 callback.onStop(devices.mapNotNull { it.value })
             }
         }
 
         // start scan
-//        val setting = ScanSettings.Builder().setPhy(ScanSettings.PHY_LE_ALL_SUPPORTED).build()
         val setting = ScanSettings.Builder().build()
-        val filters = arrayListOf<ScanFilter>()
+        val filters = arrayListOf<ScanFilter>(
+            ScanFilter.Builder().setServiceUuid(ParcelUuid(SERVICE_UUID)).build()
+        )
         devices.clear()
         callback.onStart()
         scanner
@@ -72,9 +78,6 @@ class MyoBleFinder(autoConnect: Boolean) {
                 object : ScanCallback() {
                     override fun onScanResult(callbackType: Int, result: ScanResult?) {
                         val device = result?.device ?: return
-
-                        // filter uuid
-                        if (device.uuids?.any { it.uuid in SERVICE_UUIDS } != true) return
 
                         val ble = BleDevice(device)
                         // 去重 & filter
