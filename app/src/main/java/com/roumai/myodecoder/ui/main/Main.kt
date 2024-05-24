@@ -1,10 +1,14 @@
 package com.roumai.myodecoder.ui.main
 
-import com.roumai.myodecoder.R
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.clj.fastble.data.BleDevice
+import com.roumai.myodecoder.R
 import com.roumai.myodecoder.device.ble.MyoBleFinder
 import com.roumai.myodecoder.ui.components.FinderMenu
 
@@ -12,7 +16,7 @@ import com.roumai.myodecoder.ui.components.FinderMenu
 fun Main() {
     val context = LocalContext.current
     var selected by remember { mutableStateOf(context.getString(R.string.key_select_devices)) }
-    val devices = mutableListOf<Pair<String, Any>>()
+    val devices = mutableListOf<Pair<String, BleDevice>>()
     val finder = MyoBleFinder(true)
     FinderMenu(
         value = selected,
@@ -26,8 +30,7 @@ fun Main() {
                 }
 
                 override fun onFound(peripheral: BleDevice) {
-                    if (peripheral.name == null) return
-                    devices.add(peripheral.name to peripheral)
+                    devices.add(peripheral.mac to peripheral)
                 }
 
                 override fun onStop(peripherals: List<BleDevice>) {
