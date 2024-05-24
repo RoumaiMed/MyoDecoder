@@ -6,6 +6,7 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.bluetooth.le.ScanSettings.SCAN_MODE_LOW_LATENCY
 import android.os.ParcelUuid
 import com.clj.fastble.BleManager
 import com.clj.fastble.data.BleDevice
@@ -65,7 +66,7 @@ class MyoBleFinder(autoConnect: Boolean) {
         }
 
         // start scan
-        val setting = ScanSettings.Builder().build()
+        val setting = ScanSettings.Builder().setScanMode(SCAN_MODE_LOW_LATENCY).build()
         val filters = arrayListOf<ScanFilter>(
             ScanFilter.Builder().setServiceUuid(ParcelUuid(SERVICE_UUID)).build()
         )
