@@ -9,6 +9,11 @@ import android.bluetooth.le.ScanSettings
 import com.clj.fastble.BleManager
 import com.clj.fastble.data.BleDevice
 import com.clj.fastble.scan.BleScanRuleConfig
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 /**
@@ -18,6 +23,10 @@ private val SERVICE_UUIDS = arrayOf(UUID.fromString("0000ACE0-0000-1000-8000-008
 
 class MyoBleFinder(autoConnect: Boolean) {
     private var debug = false
+    private val scanner = BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner
+    private var callback: OnFinderUpdate? = null
+    private val devices = HashMap<String, BleDevice>()
+    companion object private val TIMEOUT = 12000
 
     init {
         BleManager.getInstance()
@@ -35,17 +44,32 @@ class MyoBleFinder(autoConnect: Boolean) {
 
     @SuppressLint("MissingPermission")
     fun scan(callback: OnFinderUpdate): Boolean {
-        val scanner = BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner ?: return false
+        this.callback = callback
+        if (scanner == null) return false
+
+        // timeout
+        val job = CoroutineScope(Dispatchers.IO).launch {
+            var timeout = TIMEOUT
+            while (isActive && timeout > 0) {
+                timeout -= 1000
+                delay(1000)
+            }
+            if (timeout > 0) {
+                callback.onStop(devices.mapNotNull { it.value })
+            }
+        }
+
+        // start scan
+//        val setting = ScanSettings.Builder().setPhy(ScanSettings.PHY_LE_ALL_SUPPORTED).build()
         val setting = ScanSettings.Builder().build()
         val filters = arrayListOf<ScanFilter>()
+        devices.clear()
         callback.onStart()
         scanner
             .startScan(
                 filters,
                 setting,
                 object : ScanCallback() {
-                    private val devices = HashMap<String, BleDevice>()
-
                     override fun onScanResult(callbackType: Int, result: ScanResult?) {
                         val device = result?.device ?: return
 
@@ -63,15 +87,24 @@ class MyoBleFinder(autoConnect: Boolean) {
                     }
 
                     override fun onBatchScanResults(results: List<ScanResult?>?) {
-                        callback.onStop(results?.mapNotNull { dev -> dev?.device?.let { BleDevice(it) } } ?: emptyList())
+                        job.cancel()
+                        callback.onStop(devices.mapNotNull { it.value })
                     }
 
                     override fun onScanFailed(errorCode: Int) {
                     }
                 })
+
         return true
     }
 
+    @SuppressLint("MissingPermission")
+    fun stop(): Boolean {
+        scanner?.stopScan(object : ScanCallback() {})
+        this.callback?.onStop(devices.mapNotNull { it.value })
+        this.callback = null
+        return true
+    }
 
     interface OnFinderUpdate {
         fun onStart()
