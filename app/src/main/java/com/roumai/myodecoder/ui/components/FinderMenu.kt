@@ -102,9 +102,12 @@ fun FinderMenu(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             onClick = {
-                                expanded = true
                                 onFinding(loading)
-                            }),
+                                if (loading.value) {
+                                    expanded = true
+                                }
+                            }
+                        ),
                     imageVector = Icons.Default.Refresh,
                     tint = Color.Black,
                     contentDescription = "finding..."

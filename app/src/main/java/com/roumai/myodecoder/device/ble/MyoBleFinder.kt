@@ -25,7 +25,8 @@ private val SERVICE_UUID = UUID.fromString("0000ACE0-0000-1000-8000-00805f9b34fb
 
 class MyoBleFinder(autoConnect: Boolean) {
     private var debug = false
-    private val scanner = BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner
+    private val adapter = BluetoothAdapter.getDefaultAdapter()
+    private val scanner = adapter.bluetoothLeScanner
     private var callback: OnFinderUpdate? = null
     private val devices = HashMap<String, BleDevice>()
 
@@ -41,6 +42,10 @@ class MyoBleFinder(autoConnect: Boolean) {
                     .setAutoConnect(autoConnect)
                     .build()
             )
+    }
+
+    fun isBluetoothEnabled(): Boolean {
+        return adapter?.isEnabled == true
     }
 
     fun enableDebug(debug: Boolean) {
