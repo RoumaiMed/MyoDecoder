@@ -19,7 +19,7 @@ fun Main(finder: MyoBleFinder?) {
         items = devices,
         onFinding = {
             if (finder?.isBluetoothEnabled() == false) {
-                ToastManager.showToast(context, "Please enable Bluetooth first.")
+                ToastManager.showToast(context, context.getString(R.string.key_enable_bluetooth))
                 return@FinderMenu
             }
             devices.clear()
