@@ -13,16 +13,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.roumai.myodecoder.ui.theme.ColorDarkGray
-import com.roumai.myodecoder.ui.theme.ColorGraphite
-import com.roumai.myodecoder.ui.theme.ColorLightGray
-import com.roumai.myodecoder.ui.theme.ColorWhite
+import com.roumai.myodecoder.ui.theme.*
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.random.Random
@@ -30,14 +28,13 @@ import kotlin.random.Random
 data class RTWindowOption(
     val signalColor: Color = ColorWhite,
     val backgroundColor: Color = ColorGraphite,
-    val packetLossColor: Color = ColorDarkGray,
+    val packetLossColor: Color = ColorGray,
     val padding: PaddingValues = PaddingValues(0.dp, 0.dp),
     val roundedSize: Dp = 6.dp,
     val boldLine: Boolean = true,
     val voltScale: Float = 1f,
     val voltOrigin: Float = 0f,
     val tickCount: Int = 5,
-    val zeroPadding: Dp = 1.dp,
     val verticalPadding: Dp = 4.dp,
     val horizontalPadding: Dp = 4.dp,
     val voltRange: Float = 10f,
@@ -49,11 +46,11 @@ data class RTWindowOption(
 @Composable
 fun RTWindow(
     modifier: Modifier,
-    channelIdx: Int,
-    data: MutableList<Pair<Long, FloatArray>>,
+    data: MutableList<Pair<Long, Float?>>,
     options: RTWindowOption
 ) {
     val path = remember { Path() }
+    val lossPath = remember { Path() }
     val xAxis = remember { Path() }
     val yAxis = remember { Path() }
     val voltScale = options.voltScale
@@ -66,28 +63,76 @@ fun RTWindow(
                 .clipToBounds()
                 .fillMaxSize()
         ) {
-            if (data.isEmpty()) return@Canvas
+            if (data.size <= 1) return@Canvas
             val yMiddle = size.height / 2
             val graphHeight = size.height - 2 * options.verticalPadding.toPx()
-            val graphWidth = size.width - 2 * options.horizontalPadding.toPx() - options.zeroPadding.toPx()
+            val graphWidth = size.width - 2 * options.horizontalPadding.toPx()
             val dense = data.size / graphWidth
-            val volt0 = data[0].second[channelIdx] * voltScale + voltOrigin
-            val y0 = yMiddle + volt0 / options.voltRange * graphHeight / 2
-            path.reset()
-            path.moveTo(options.horizontalPadding.toPx() + options.zeroPadding.toPx(), y0)
-            data.forEach { (ts, voltages) ->
-                val x = (ts - data[0].first) / dense + options.horizontalPadding.toPx() + options.zeroPadding.toPx()
-                val volt = voltages[channelIdx] * voltScale + voltOrigin
-                val y = yMiddle + volt / options.voltRange * graphHeight / 2
-                path.lineTo(x, y)
-            }
-            drawPath(
-                path = path,
-                color = options.signalColor,
-                style = Stroke(
-                    width = if (options.boldLine) 1.2.dp.toPx() else 0.5.dp.toPx(),
-                )
+            var pathStarted = false
+            val initialX = options.horizontalPadding.toPx()
+            var lastValidX = 0
+            val lineStyle = Stroke(
+                width = if (options.boldLine) 1.2.dp.toPx() else 0.5.dp.toPx(),
             )
+            data.forEachIndexed { idx, (ts, voltage) ->
+                val x = (ts - data[0].first) / dense + initialX
+                if (voltage != null) {
+                    val volt = voltage * voltScale + voltOrigin
+                    val y = yMiddle + volt / options.voltRange * graphHeight / 2
+                    if (!pathStarted) {
+                        path.moveTo(x, y)
+                        pathStarted = true
+                    } else {
+                        path.lineTo(x, y)
+                    }
+                    if (lastValidX != 0 && idx - lastValidX > 1) {
+                        drawPath(
+                            path = lossPath.apply { lineTo(x, y) },
+                            color = options.signalColor.copy(alpha = 0.2f),
+                            style = lineStyle
+                        )
+                        lossPath.reset()
+                    }
+                    lossPath.moveTo(x, y)
+                    lastValidX = idx
+                    if ((idx == 0 && data[1].second == null) ||
+                        (idx == data.size - 1 && data[data.size - 2].second == null) ||
+                        (data[idx - 1].second == null && data[idx + 1].second == null)
+                    ) {
+                        drawCircle(
+                            color = options.signalColor,
+                            center = Offset(x, y),
+                            radius = 1.dp.toPx()
+                        )
+                    }
+                } else {
+                    if (pathStarted) {
+                        drawPath(
+                            path = path,
+                            color = options.signalColor,
+                            style = lineStyle
+                        )
+                        path.reset()
+                        pathStarted = false
+                    }
+                    if (options.showPacketLoss) {
+                        val rectWidth = graphWidth / data.size
+                        drawRect(
+                            color = options.packetLossColor,
+                            topLeft = Offset(x - rectWidth / 2, yMiddle - graphHeight / 2),
+                            size = Size(rectWidth, graphHeight)
+                        )
+                    }
+                }
+            }
+            if (pathStarted) {
+                drawPath(
+                    path = path,
+                    color = options.signalColor,
+                    style = lineStyle
+                )
+            }
+
             xAxis.reset()
             if (options.showXAxis) {
                 val tickCnt = if (data.size > options.tickCount) options.tickCount else data.size
@@ -100,7 +145,7 @@ fun RTWindow(
                 )
                 val xTickStep = graphWidth / tickCnt
                 for (i in 0 until tickCnt) {
-                    val x = options.horizontalPadding.toPx() + options.zeroPadding.toPx() + i * xTickStep
+                    val x = options.horizontalPadding.toPx() + i * xTickStep
                     drawLine(
                         start = Offset(x, yMiddle - 2.dp.toPx()),
                         end = Offset(x, yMiddle + 2.dp.toPx()),
@@ -125,12 +170,12 @@ fun RTWindow(
     }
 }
 
-fun generateMockData(length: Int): List<Pair<Long, FloatArray>> {
+fun generateMockData(length: Int): List<Pair<Long, Float?>> {
     val startTime = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli()
     return List(length) { i ->
         val timestamp = startTime + i
-        val arr = floatArrayOf(Random.nextDouble(-10.0, 10.0).toFloat())
-        Pair(timestamp, arr)
+        val data: Float? = if (i % 20 == 0) null else Random.nextDouble(-10.0, 10.0).toFloat()
+        Pair(timestamp, data)
     }
 }
 
@@ -142,7 +187,6 @@ fun RTWindowPreview() {
         RTWindow(
             modifier = Modifier
                 .fillMaxSize(),
-            0,
             data.toMutableList(),
             RTWindowOption()
         )
