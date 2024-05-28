@@ -6,16 +6,36 @@ import androidx.compose.ui.platform.LocalContext
 import com.clj.fastble.data.BleDevice
 import com.roumai.myodecoder.R
 import com.roumai.myodecoder.device.ble.MyoBleFinder
+import com.roumai.myodecoder.device.ble.MyoBleService
+import com.roumai.myodecoder.device.ble.impl.BleDelegateDefaultImpl
 import com.roumai.myodecoder.ui.components.FinderMenu
 import com.roumai.myodecoder.ui.utils.ToastManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
 
 @Composable
 fun Main(finder: MyoBleFinder?) {
+    BleFinderMenu(finder = finder)
+}
+
+
+@Composable
+fun BleFinderMenu(finder: MyoBleFinder?) {
     val context = LocalContext.current
-    var selected by remember { mutableStateOf(context.getString(R.string.key_select_devices)) }
+    var selected by remember {
+        mutableStateOf(
+            Pair<String, BleDevice?>(
+                context.getString(R.string.key_select_devices),
+                null
+            )
+        )
+    }
+    val connectionState = remember { mutableStateOf(false) }
     val devices = mutableListOf<Pair<String, BleDevice>>()
     FinderMenu(
-        value = selected,
+        value = selected.first,
         items = devices,
         onFinding = {
             if (finder?.isBluetoothEnabled() == false) {
@@ -34,13 +54,29 @@ fun Main(finder: MyoBleFinder?) {
                 }
 
                 override fun onStop(peripherals: List<BleDevice>) {
-                    it.value = false
+                    if (it.value) {
+                        it.value = false
+                    }
                 }
             })
         },
-        onSelected = {
-            selected = it.first
+        onSelected = { loading, clicked, expanded, it ->
+            loading.value = false
+            val delegate = BleDelegateDefaultImpl(it.second)
+            val service = MyoBleService(delegate)
+            CoroutineScope(Dispatchers.Main).launch {
+                if (service.connect()) {
+                    connectionState.value = true
+                    selected = it
+                } else {
+                    connectionState.value = false
+                    ToastManager.showToast(context, context.getString(R.string.key_connect_fail))
+                }
+                clicked.value = false
+                expanded.value = false
+            }
         },
+        connectionState = connectionState,
         backgroundColor = Color(0xFFE0E0E0)
     )
 }

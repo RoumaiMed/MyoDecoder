@@ -12,13 +12,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.core.app.ActivityCompat
+import com.roumai.myodecoder.device.ble.MyoBleFinder
+import com.roumai.myodecoder.device.ble.impl.BleDelegateDefaultImpl
+import com.roumai.myodecoder.ui.main.Main
 import com.roumai.myodecoder.ui.theme.MyoDecoderTheme
 
 class MainActivity : AppCompatActivity() {
+    private val bleFinder = mutableStateOf<MyoBleFinder?>(null)
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,7 +42,7 @@ class MainActivity : AppCompatActivity() {
                         },
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Greeting("Android")
+                    Main(bleFinder.value)
                 }
             }
         }
@@ -100,6 +105,10 @@ class MainActivity : AppCompatActivity() {
         requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 1) {
+            bleFinder.value = MyoBleFinder(true)
+            BleDelegateDefaultImpl.init(this.application)
+        }
     }
 }
 
