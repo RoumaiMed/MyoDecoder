@@ -1,8 +1,8 @@
 package com.roumai.myodecoder.device.ble.protocols
 
 object MyoProtocolEMG {
-    fun decode(data: ByteArray, channelSize: Int = 16): ArrayList<Pair<Long, IntArray>>? {
-        if (data[0] == 0x06.toByte()) {
+    fun decode(data: ByteArray, channelSize: Int = 16): List<Pair<Long, IntArray>>? {
+        if (data[0] == 0x03.toByte()) {
             var index = 1
             var timestamp: Long
             var timestamp_pre: UInt
