@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">MyoDecoder</string>
     <string name="key_select_devices">Select Bluetooth Devices</string>
+    <string name="key_enable_bluetooth">Please enable Bluetooth first</string>
+    <string name="key_connect_fail">Fail to connect to the device</string>
 </resources>

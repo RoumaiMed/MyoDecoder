@@ -1,20 +1,10 @@
 package com.roumai.myodecoder.ui.components
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.DropdownMenu
@@ -23,10 +13,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -42,10 +30,11 @@ fun FinderMenu(
     value: String,
     items: List<Pair<String, BleDevice>>,
     onFinding: (MutableState<Boolean>) -> Unit,
-    onSelected: (Pair<String, BleDevice>) -> Unit,
+    onSelected: (MutableState<Boolean>, MutableState<Boolean>, MutableState<Boolean>, Pair<String, BleDevice>) -> Unit,
+    connectionState: MutableState<Boolean>,
     backgroundColor: Color
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    val expanded = remember { mutableStateOf(false) }
     val loading = remember { mutableStateOf(false) }
     val rotation = if (loading.value) {
         val infiniteTransition = rememberInfiniteTransition(label = "transition")
@@ -81,7 +70,9 @@ fun FinderMenu(
                         .height(40.dp)
                         .fillMaxWidth(0.9f)
                         .clickable(onClick = {
-                            expanded = !expanded
+                            if (!connectionState.value) {
+                                expanded.value = !expanded.value
+                            }
                         }),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -102,9 +93,17 @@ fun FinderMenu(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             onClick = {
-                                expanded = true
-                                onFinding(loading)
-                            }),
+                                if (!loading.value && expanded.value) {
+                                    expanded.value = false
+                                }
+                                if (!loading.value && !connectionState.value) {
+                                    onFinding(loading)
+                                    if (loading.value) {
+                                        expanded.value = true
+                                    }
+                                }
+                            }
+                        ),
                     imageVector = Icons.Default.Refresh,
                     tint = Color.Black,
                     contentDescription = "finding..."
@@ -113,15 +112,22 @@ fun FinderMenu(
             DropdownMenu(
                 modifier = Modifier
                     .fillMaxWidth(0.9f),
-                expanded = expanded,
+                expanded = expanded.value,
                 onDismissRequest = {
-                    expanded = false
+                    expanded.value = false
                 },
             ) {
+                val oneClicked = remember { mutableStateOf(false) }
                 for (item in items) {
                     val device = item.second
+                    val clicked = remember { mutableStateOf(false) }
                     DropdownMenuItem(
-                        modifier = Modifier.height(32.dp),
+                        modifier = Modifier
+                            .height(32.dp)
+                            .background(
+                                if (clicked.value) Color.LightGray
+                                else Color.Transparent
+                            ),
                         text = {
                             Column(
                                 modifier = Modifier
@@ -141,8 +147,12 @@ fun FinderMenu(
                             }
                         },
                         onClick = {
-                            expanded = false
-                            onSelected(item)
+                            if (oneClicked.value) {
+                                return@DropdownMenuItem
+                            }
+                            oneClicked.value = true
+                            clicked.value = true
+                            onSelected(loading, clicked, expanded, item)
                         }
                     )
                 }

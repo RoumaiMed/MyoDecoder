@@ -2,4 +2,6 @@
 <resources>
     <string name="app_name">MyoDecoder</string>
     <string name="key_select_devices">查找蓝牙设备</string>
+    <string name="key_enable_bluetooth">请打开系统蓝牙</string>
+    <string name="key_connect_fail">连接蓝牙设备失败</string>
 </resources>

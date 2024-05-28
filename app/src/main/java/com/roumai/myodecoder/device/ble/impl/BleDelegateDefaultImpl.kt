@@ -1,13 +1,9 @@
 package com.roumai.myodecoder.device.ble.impl
 
+import android.app.Application
 import android.bluetooth.BluetoothGatt
 import com.clj.fastble.BleManager
-import com.clj.fastble.callback.BleGattCallback
-import com.clj.fastble.callback.BleMtuChangedCallback
-import com.clj.fastble.callback.BleNotifyCallback
-import com.clj.fastble.callback.BleReadCallback
-import com.clj.fastble.callback.BleRssiCallback
-import com.clj.fastble.callback.BleWriteCallback
+import com.clj.fastble.callback.*
 import com.clj.fastble.data.BleDevice
 import com.clj.fastble.exception.BleException
 import com.roumai.myodecoder.device.ble.BleDelegate
@@ -21,6 +17,12 @@ class BleDelegateDefaultImpl(private val device: BleDevice) : BleDelegate {
     override val name = device.name ?: "(Unknown)"
     override val mac = device.mac ?: ""
     private var connected = false
+
+    companion object {
+        fun init(context: Application) {
+            BleManager.getInstance().init(context)
+        }
+    }
 
     override suspend fun connect(): Boolean = suspendCoroutine { cor ->
         BleManager.getInstance().connect(device, object : BleGattCallback() {
