@@ -23,7 +23,7 @@ class MyoBleService(override val delegate: BleDelegate) : CommonBleService(deleg
     suspend fun observeEMG(callback: (List<Pair<Long, IntArray>>) -> Unit): Boolean {
         return delegate.subscribe(KEY_EMG) {
             // emg protocol: decode here
-            val emg = MyoProtocolEMG.decode(data = it, channelSize = 16) ?: return@subscribe
+            val emg = MyoProtocolEMG.decode(stream = it, channelSize = 16) ?: return@subscribe
             callback(emg)
         }
     }
