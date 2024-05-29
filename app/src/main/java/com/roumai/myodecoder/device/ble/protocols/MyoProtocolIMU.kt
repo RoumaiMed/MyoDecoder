@@ -8,7 +8,7 @@ object MyoProtocolIMU {
         ts = ts or (stream[index++].toUByte().toInt() shl 16)
         ts = ts or (stream[index++].toUByte().toInt() shl 8)
         ts = ts or (stream[index++].toUByte().toInt())
-        val size = 7
+        val size = 10
         val data = FloatArray(size)
         var value: Int
         for (i in 0 until size) {
