@@ -3,6 +3,7 @@ package com.roumai.myodecoder.device.ble
 import android.os.ParcelUuid
 import com.roumai.myodecoder.device.ble.protocols.MyoProtocolEMG
 import com.roumai.myodecoder.device.ble.protocols.MyoProtocolIMU
+import com.roumai.myodecoder.device.ble.protocols.MyoProtocolRMS
 
 private val KEY_EMG = BleDelegateKey(
     service = ParcelUuid.fromString("0000ACE0-0000-1000-8000-00805f9b34fb"),
@@ -33,6 +34,14 @@ class MyoBleService(override val delegate: BleDelegate) : CommonBleService(deleg
             // imu protocol: decode here
             val imu = MyoProtocolIMU.decode(stream = it) ?: return@subscribe
             callback(imu)
+        }
+    }
+
+    suspend fun observeRMS(callback: (Pair<Long, IntArray>) -> Unit): Boolean {
+        return delegate.subscribe(KEY_RMS) {
+            // rms protocol: decode here
+            val rms = MyoProtocolRMS.decode(stream = it) ?: return@subscribe
+            callback(rms)
         }
     }
 }
