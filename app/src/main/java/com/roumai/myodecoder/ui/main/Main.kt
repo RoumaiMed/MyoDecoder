@@ -17,12 +17,30 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun Main(finder: MyoBleFinder?) {
-    BleFinderMenu(finder = finder)
+    BleFinderMenu(
+        finder = finder,
+        onDeviceConnected = {
+            CoroutineScope(Dispatchers.IO).launch {
+                it.observeEMG {
+
+                }
+                it.observeIMU {
+
+                }
+                it.observeRMS {
+
+                }
+            }
+        }
+    )
 }
 
 
 @Composable
-fun BleFinderMenu(finder: MyoBleFinder?) {
+fun BleFinderMenu(
+    finder: MyoBleFinder?,
+    onDeviceConnected: (MyoBleService) -> Unit
+) {
     val context = LocalContext.current
     var selected by remember {
         mutableStateOf(
@@ -68,6 +86,7 @@ fun BleFinderMenu(finder: MyoBleFinder?) {
                 if (service.connect()) {
                     connectionState.value = true
                     selected = it
+                    onDeviceConnected(service)
                 } else {
                     connectionState.value = false
                     ToastManager.showToast(context, context.getString(R.string.key_connect_fail))
