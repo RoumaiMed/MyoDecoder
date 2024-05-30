@@ -1,7 +1,9 @@
 package com.roumai.myodecoder.device.ble.protocols
 
 object MyoProtocolRMS {
+    private var startAt = -1L
     fun decode(stream: ByteArray): Pair<Long, IntArray>? {
+        if (startAt == -1L) startAt = System.currentTimeMillis()
         var index = 0
         if (stream[index++] != 0x07.toByte()) return null
         var ts: Int = (stream[index++].toUByte().toInt() shl 24)
@@ -18,6 +20,6 @@ object MyoProtocolRMS {
             rms = rms.or(stream[index++].toUByte().toInt())
             data[i] = rms
         }
-        return Pair(ts.toLong(), data)
+        return Pair(ts.toLong() + startAt, data)
     }
 }

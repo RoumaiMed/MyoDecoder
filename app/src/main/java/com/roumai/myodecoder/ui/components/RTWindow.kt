@@ -46,7 +46,7 @@ data class RTWindowOption(
 @Composable
 fun RTWindow(
     modifier: Modifier,
-    data: MutableList<Pair<Long, Float?>>,
+    data: List<Pair<Long, Float?>>,
     options: RTWindowOption
 ) {
     val path = remember { Path() }
@@ -97,7 +97,8 @@ fun RTWindow(
                     lastValidX = idx
                     if ((idx == 0 && data[1].second == null) ||
                         (idx == data.size - 1 && data[data.size - 2].second == null) ||
-                        (data[idx - 1].second == null && data[idx + 1].second == null)
+                        (idx != 0 && idx != data.size - 1 &&
+                                data[idx - 1].second == null && data[idx + 1].second == null)
                     ) {
                         drawCircle(
                             color = options.signalColor,

@@ -22,7 +22,9 @@ private val KEY_IMU = BleDelegateKey(
 class MyoBleService(override val delegate: BleDelegate) : CommonBleService(delegate = delegate) {
 
     suspend fun observeEMG(callback: (List<Pair<Long, IntArray>>) -> Unit): Boolean {
+        var cnt = 0
         return delegate.subscribe(KEY_EMG) {
+            if (cnt++ < 5) return@subscribe // skip first 5 packet #TODO
             // emg protocol: decode here
             val emg = MyoProtocolEMG.decode(stream = it, channelSize = 16) ?: return@subscribe
             callback(emg)

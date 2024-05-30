@@ -1,38 +1,54 @@
 package com.roumai.myodecoder.ui.main
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.clj.fastble.data.BleDevice
 import com.roumai.myodecoder.R
+import com.roumai.myodecoder.core.DataManager
 import com.roumai.myodecoder.device.ble.MyoBleFinder
 import com.roumai.myodecoder.device.ble.MyoBleService
 import com.roumai.myodecoder.device.ble.impl.BleDelegateDefaultImpl
 import com.roumai.myodecoder.ui.components.FinderMenu
+import com.roumai.myodecoder.ui.components.RTWindow
+import com.roumai.myodecoder.ui.components.RTWindowOption
 import com.roumai.myodecoder.ui.utils.ToastManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 
 @Composable
 fun Main(finder: MyoBleFinder?) {
-    BleFinderMenu(
-        finder = finder,
-        onDeviceConnected = {
-            CoroutineScope(Dispatchers.IO).launch {
-                it.observeEMG {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        BleFinderMenu(
+            finder = finder,
+            onDeviceConnected = {
+                CoroutineScope(Dispatchers.IO).launch {
+                    it.observeEMG { dataList ->
+                        dataList.forEach { data ->
+                            DataManager.addEmg(data.first, data.second)
+                        }
+                    }
+                    it.observeIMU {
 
-                }
-                it.observeIMU {
+                    }
+                    it.observeRMS {
 
-                }
-                it.observeRMS {
-
+                    }
                 }
             }
-        }
-    )
+        )
+        EmgRtWindow(
+            modifier = Modifier
+                .size(width = 360.dp, height = 200.dp)
+        )
+    }
 }
 
 
@@ -97,5 +113,28 @@ fun BleFinderMenu(
         },
         connectionState = connectionState,
         backgroundColor = Color(0xFFE0E0E0)
+    )
+}
+
+@Composable
+fun EmgRtWindow(
+    modifier: Modifier
+) {
+    val emgDataState = remember { mutableStateOf<List<Pair<Long, Float?>>>(emptyList()) }
+    val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            while (isActive) {
+                val emgData = DataManager.getEmg()
+                emgDataState.value = emgData
+                delay(10L)
+            }
+        }
+    }
+    val options = remember { RTWindowOption() }
+    RTWindow(
+        modifier = modifier,
+        data = emgDataState.value,
+        options = options
     )
 }
