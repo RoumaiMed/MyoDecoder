@@ -17,7 +17,7 @@ object DataManager {
 
     fun getEmg(): MutableList<Pair<Long, Float?>> {
         val currentAt = System.currentTimeMillis()
-        val lastAt = currentAt - GlobalConfig.windowSize * 1000
+        val lastAt = currentAt - GlobalConfig.windowSize
         val result = mutableListOf<Pair<Long, Float?>>()
         for (ts in lastAt..currentAt) {
             val data = emgData[ts]?.second?.get(0)?.toFloat()?.div(1000f)
