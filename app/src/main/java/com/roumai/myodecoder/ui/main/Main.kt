@@ -64,7 +64,7 @@ fun Main(
                             DataManager.addEmg(data.first, data.second)
                         }
                     }
-                    it.observeIMU {data ->
+                    it.observeIMU { data ->
                         val x = data.second[4]
                         val y = data.second[5]
                         val z = data.second[6]
@@ -76,7 +76,7 @@ fun Main(
                 }
             }
         )
-        VerticalSpacer(height = 20)
+        VerticalSpacer(height = 40)
         val boxWidth = config.screenWidthDp.dp - horizontalPadding * 2
         Box(
             modifier = Modifier
@@ -84,7 +84,11 @@ fun Main(
                 .width(boxWidth)
                 .height(boxWidth)
         ) {
-
+            GyroWindow(
+                modifier = Modifier
+                    .fillMaxSize(),
+                data = gyroDataState.value,
+            )
         }
         VerticalSpacer(height = 40)
         SciBox(
@@ -188,6 +192,24 @@ fun EmgRtWindow(
     RTWindow(
         modifier = modifier,
         data = emgDataState.value,
+        options = options
+    )
+}
+
+@Composable
+fun GyroWindow(
+    modifier: Modifier,
+    data: Triple<Float, Float, Float>
+) {
+    val options = remember {
+        GyroscopeOption(
+            Color(0xFF231815),
+            Color.White
+        )
+    }
+    Gyroscope(
+        modifier = modifier,
+        data = data,
         options = options
     )
 }
