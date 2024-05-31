@@ -1,10 +1,12 @@
 package com.roumai.myodecoder.core
 
+import androidx.compose.runtime.mutableStateOf
 import java.util.concurrent.ConcurrentHashMap
 
 object DataManager {
     var isActive = false
     private val emgData = ConcurrentHashMap<Long, Pair<Long, IntArray>>()
+    private val gyro = mutableStateOf(Triple(0f, 0f, 0f))
 
     fun addEmg(timestamp: Long, data: IntArray) {
         emgData[timestamp] = Pair(timestamp, data)
@@ -31,4 +33,11 @@ object DataManager {
         }
         return result
     }
+
+    fun updateGyro(x: Float, y: Float, z: Float) {
+        gyro.value = Triple(x, y, z)
+    }
+
+    fun getGyro() = gyro
+
 }

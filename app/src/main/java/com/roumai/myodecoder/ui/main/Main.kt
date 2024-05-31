@@ -1,11 +1,14 @@
 package com.roumai.myodecoder.ui.main
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.clj.fastble.data.BleDevice
@@ -14,18 +17,43 @@ import com.roumai.myodecoder.core.DataManager
 import com.roumai.myodecoder.device.ble.MyoBleFinder
 import com.roumai.myodecoder.device.ble.MyoBleService
 import com.roumai.myodecoder.device.ble.impl.BleDelegateDefaultImpl
-import com.roumai.myodecoder.ui.components.FinderMenu
-import com.roumai.myodecoder.ui.components.RTWindow
-import com.roumai.myodecoder.ui.components.RTWindowOption
+import com.roumai.myodecoder.ui.components.*
 import com.roumai.myodecoder.ui.utils.ToastManager
 import kotlinx.coroutines.*
 
 
 @Composable
-fun Main(finder: MyoBleFinder?) {
+fun Main(
+    finder: MyoBleFinder?
+) {
+    val emgDataState = remember { mutableStateOf<List<Pair<Long, Float?>>>(emptyList()) }
+    val gyroDataState = remember { mutableStateOf(Triple(0f, 0f, 0f)) }
+    val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            while (isActive) {
+                if (!DataManager.isActive) {
+                    delay(1000L)
+                    continue
+                }
+                val emgData = DataManager.getEmg()
+                emgDataState.value = emgData
+                val gyroData = DataManager.getGyro()
+                gyroDataState.value = gyroData.value
+                delay(10L)
+            }
+        }
+    }
     Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF231815))
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        val config = LocalConfiguration.current
+        val horizontalPadding = 12.dp
+        VerticalSpacer(height = 20)
         BleFinderMenu(
             finder = finder,
             onDeviceConnected = {
@@ -36,8 +64,11 @@ fun Main(finder: MyoBleFinder?) {
                             DataManager.addEmg(data.first, data.second)
                         }
                     }
-                    it.observeIMU {
-
+                    it.observeIMU {data ->
+                        val x = data.second[4]
+                        val y = data.second[5]
+                        val z = data.second[6]
+                        DataManager.updateGyro(x, y, z)
                     }
                     it.observeRMS {
 
@@ -45,10 +76,41 @@ fun Main(finder: MyoBleFinder?) {
                 }
             }
         )
-        EmgRtWindow(
+        VerticalSpacer(height = 20)
+        val boxWidth = config.screenWidthDp.dp - horizontalPadding * 2
+        Box(
             modifier = Modifier
-                .size(width = 360.dp, height = 200.dp)
-        )
+                .padding(horizontal = horizontalPadding)
+                .width(boxWidth)
+                .height(boxWidth)
+        ) {
+
+        }
+        VerticalSpacer(height = 40)
+        SciBox(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp),
+            horizontalPadding = horizontalPadding,
+            backgroundColor = Color(0xFF231815)
+        ) {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .padding(horizontal = 10.dp)
+                ) {
+                    SciText(text = "EMG", colorHex = "#5ebdb2", fontSize = 20f)
+                }
+                EmgRtWindow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp),
+                    emgDataState = emgDataState
+                )
+            }
+        }
     }
 }
 
@@ -119,23 +181,9 @@ fun BleFinderMenu(
 
 @Composable
 fun EmgRtWindow(
-    modifier: Modifier
+    modifier: Modifier,
+    emgDataState: MutableState<List<Pair<Long, Float?>>>,
 ) {
-    val emgDataState = remember { mutableStateOf<List<Pair<Long, Float?>>>(emptyList()) }
-    val coroutineScope = rememberCoroutineScope()
-    LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            while (isActive) {
-                if (!DataManager.isActive) {
-                    delay(1000L)
-                    continue
-                }
-                val emgData = DataManager.getEmg()
-                emgDataState.value = emgData
-                delay(10L)
-            }
-        }
-    }
     val options = remember { RTWindowOption() }
     RTWindow(
         modifier = modifier,
