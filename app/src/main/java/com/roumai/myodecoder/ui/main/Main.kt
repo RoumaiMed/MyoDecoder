@@ -29,6 +29,7 @@ fun Main(finder: MyoBleFinder?) {
         BleFinderMenu(
             finder = finder,
             onDeviceConnected = {
+                DataManager.isActive = true
                 CoroutineScope(Dispatchers.IO).launch {
                     it.observeEMG { dataList ->
                         dataList.forEach { data ->
@@ -125,6 +126,10 @@ fun EmgRtWindow(
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             while (isActive) {
+                if (!DataManager.isActive) {
+                    delay(1000L)
+                    continue
+                }
                 val emgData = DataManager.getEmg()
                 emgDataState.value = emgData
                 delay(10L)
