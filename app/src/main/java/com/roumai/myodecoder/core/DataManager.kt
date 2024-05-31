@@ -21,8 +21,13 @@ object DataManager {
         val lastAt = currentAt - GlobalConfig.windowSize
         val result = mutableListOf<Pair<Long, Float?>>()
         for (ts in lastAt until currentAt) {
-            val data = emgData[ts]?.second?.get(0)?.toFloat()?.div(1000f)
-            result.add(Pair(ts, data))
+            val data = emgData[ts]?.second?.first()
+            if (data == null) {
+                result.add(Pair(ts, null))
+                continue
+            }
+            val volt = (data - 8192) / 8192.0f * 1.65f
+            result.add(Pair(ts, volt))
         }
         return result
     }
