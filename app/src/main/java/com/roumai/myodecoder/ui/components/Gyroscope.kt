@@ -1,4 +1,4 @@
-package com.roumai.myodecoder.components
+package com.roumai.myodecoder.ui.components
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Canvas
@@ -22,6 +22,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.PI
@@ -121,10 +122,11 @@ fun Gyroscope(
 
 
 @SuppressLint("UnrememberedMutableState")
+@Preview
 @Composable
 fun GyroscopePreview() {
     Gyroscope(
-        modifier = Modifier.size(200.dp, 300.dp),
-        data = mutableStateOf(Triple(1f, 0f, -10f)),
+        modifier = Modifier.size(200.dp, 200.dp),
+        data = mutableStateOf(Triple(1f, 0f, 20f)),
     )
 }
