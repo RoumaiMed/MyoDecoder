@@ -45,6 +45,9 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/INDEX.LIST"
+            excludes += "META-INF/**"
+            excludes += "**/*.exclude"
         }
     }
 }
@@ -69,4 +72,9 @@ dependencies {
 
     /* ble connect */
     implementation("com.github.Jasonchenlijian:FastBle:2.4.0")
+    /* signal processing */
+    implementation("com.github.psambit9791:jdsp:2.0.1") {
+        exclude(group = "org.apache.maven.surefire", module = "common-java5")
+        exclude(group = "org.apache.maven.surefire", module = "surefire-api")
+    }
 }

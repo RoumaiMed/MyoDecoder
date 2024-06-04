@@ -10,4 +10,5 @@ object GlobalConfig {
     const val DATA_STORE_SIZE = 12000
 
     var windowSize by mutableStateOf(5000) // int: ms
+    var enableFiltering by mutableStateOf(false) // judge whether to filter 50HZ and its harmonic
 }

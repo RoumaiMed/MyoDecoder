@@ -63,15 +63,72 @@ object DataManager {
     fun getEmg(): MutableList<Pair<Long, Float?>> {
         val currentAt = System.currentTimeMillis()
         val lastAt = currentAt - GlobalConfig.windowSize
-        val result = mutableListOf<Pair<Long, Float?>>()
+        val rawSignal = mutableListOf<Pair<Long, Float>>()
+        val idxArr = BooleanArray((currentAt - lastAt).toInt()) { false }
         for (ts in lastAt until currentAt) {
             val data = emgData[ts]?.second?.first()
             if (data == null) {
-                result.add(Pair(ts, null))
+                rawSignal.add(Pair(ts, 0f))
+                idxArr[(ts - lastAt).toInt()] = true
                 continue
             }
             val volt = (data - 8192) / 8192.0f * 1.65f
-            result.add(Pair(ts, volt))
+            rawSignal.add(Pair(ts, volt))
+        }
+        val result = mutableListOf<Pair<Long, Float?>>()
+        if (GlobalConfig.enableFiltering) {
+            var filteredSignal = SignalProcessor.filter(
+                rawSignal.map { it.second.toDouble() }.toDoubleArray(),
+                GlobalConfig.SAMPLE_RATE.toDouble(),
+                Pair(48.0, 52.0)
+            )
+            filteredSignal = SignalProcessor.filter(
+                filteredSignal,
+                GlobalConfig.SAMPLE_RATE.toDouble(),
+                Pair(98.0, 102.0)
+            )
+            filteredSignal = SignalProcessor.filter(
+                filteredSignal,
+                GlobalConfig.SAMPLE_RATE.toDouble(),
+                Pair(148.0, 152.0)
+            )
+            filteredSignal = SignalProcessor.filter(
+                filteredSignal,
+                GlobalConfig.SAMPLE_RATE.toDouble(),
+                Pair(198.0, 202.0)
+            )
+            filteredSignal = SignalProcessor.filter(
+                filteredSignal,
+                GlobalConfig.SAMPLE_RATE.toDouble(),
+                Pair(248.0, 252.0)
+            )
+            filteredSignal = SignalProcessor.filter(
+                filteredSignal,
+                GlobalConfig.SAMPLE_RATE.toDouble(),
+                Pair(298.0, 302.0)
+            )
+            filteredSignal = SignalProcessor.filter(
+                filteredSignal,
+                GlobalConfig.SAMPLE_RATE.toDouble(),
+                Pair(348.0, 352.0)
+            )
+            filteredSignal = SignalProcessor.filter(
+                filteredSignal,
+                GlobalConfig.SAMPLE_RATE.toDouble(),
+                Pair(398.0, 402.0)
+            )
+            filteredSignal = SignalProcessor.filter(
+                filteredSignal,
+                GlobalConfig.SAMPLE_RATE.toDouble(),
+                Pair(448.0, 452.0)
+            )
+            for (i in idxArr.indices) {
+                result.add(Pair(rawSignal[i].first, if (idxArr[i]) null else filteredSignal[i].toFloat()))
+            }
+        } else {
+            for (i in idxArr.indices) {
+                result.add(Pair(rawSignal[i].first, if (idxArr[i]) null else rawSignal[i].second))
+            }
         }
         return result
     }

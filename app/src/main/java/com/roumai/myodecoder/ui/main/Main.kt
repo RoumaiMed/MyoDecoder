@@ -93,6 +93,8 @@ fun Main(
         }
         VerticalSpacer(height = 20.dp)
         ZoomTime()
+        VerticalSpacer(height = 20.dp)
+        OptionItem()
     }
 }
 
