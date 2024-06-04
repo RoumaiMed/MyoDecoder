@@ -44,13 +44,7 @@ object DataManager {
     fun getGyro() = gyro
 
     fun updateAngle(mx: Float, my: Float, mz: Float) {
-        var mmx = mx
-        var mmy = my
-        if (mmx > 9175 / 2) mmx -= 9175
-        mmx = -mmx
-        if (mmy > 9175 / 2) mmy -= 9175
-        mmy = -mmy
-        var heading = atan2(mmy, mmx)
+        var heading = atan2(my, mx)
         heading = toDegrees(heading.toDouble()).toFloat()
         if (heading < 0) {
             heading += 360f
