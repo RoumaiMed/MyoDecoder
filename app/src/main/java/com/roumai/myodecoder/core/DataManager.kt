@@ -16,7 +16,8 @@ object DataManager {
     fun startService(
         s: MyoBleService,
         onEmgCallback: (List<Pair<Long, Float?>>) -> Unit,
-        onGyroCallback: (Triple<Float, Float, Float>) -> Unit
+        onGyroCallback: (Triple<Float, Float, Float>) -> Unit,
+        onAngleCallback: (Float) -> Unit
     ) {
         service.value = s
         CoroutineScope(Dispatchers.IO).launch {
@@ -26,10 +27,14 @@ object DataManager {
                 }
             }
             service.value!!.observeIMU { data ->
-                val x = data.second[4]
-                val y = data.second[5]
-                val z = data.second[6]
-                updateGyro(x, y, z)
+                val gx = data.second[4]
+                val gy = data.second[5]
+                val gz = data.second[6]
+                updateGyro(gx, gy, gz)
+                val mx = data.second[7]
+                val my = data.second[8]
+                val mz = data.second[9]
+                updateAngle(mx, my, mz)
             }
             service.value!!.observeRMS {
 
@@ -41,6 +46,8 @@ object DataManager {
                 onEmgCallback(emgData)
                 val gyroData = getGyro()
                 onGyroCallback(gyroData.value)
+                val angleData = getAngle()
+                onAngleCallback(angleData.value)
                 delay(10L)
             }
         }

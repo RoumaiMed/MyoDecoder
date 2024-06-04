@@ -50,7 +50,8 @@ fun Main(
                 DataManager.startService(
                     it,
                     onEmgCallback = { emg -> emgDataState.value = emg },
-                    onGyroCallback = { gyro -> gyroDataState.value = gyro }
+                    onGyroCallback = { gyro -> gyroDataState.value = gyro },
+                    onAngleCallback = { angle -> angleState.value = angle }
                 )
             },
             onDeviceDisconnected = {
