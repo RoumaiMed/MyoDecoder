@@ -29,22 +29,6 @@ fun Main(
 ) {
     val emgDataState = remember { mutableStateOf<List<Pair<Long, Float?>>>(emptyList()) }
     val gyroDataState = remember { mutableStateOf(Triple(0f, 0f, 0f)) }
-    val coroutineScope = rememberCoroutineScope()
-    LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            while (isActive) {
-                if (!DataManager.isActive) {
-                    delay(1000L)
-                    continue
-                }
-                val emgData = DataManager.getEmg()
-                emgDataState.value = emgData
-                val gyroData = DataManager.getGyro()
-                gyroDataState.value = gyroData.value
-                delay(10L)
-            }
-        }
-    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -58,24 +42,15 @@ fun Main(
         BleFinderMenu(
             finder = finder,
             onDeviceConnected = {
-                DataManager.isActive = true
-                CoroutineScope(Dispatchers.IO).launch {
-                    it.observeEMG { dataList ->
-                        dataList.forEach { data ->
-                            DataManager.addEmg(data.first, data.second)
-                        }
-                    }
-                    it.observeIMU { data ->
-                        val x = data.second[4]
-                        val y = data.second[5]
-                        val z = data.second[6]
-                        DataManager.updateGyro(x, y, z)
-                    }
-                    it.observeRMS {
-
-                    }
-                }
-            }
+                DataManager.startService(
+                    it,
+                    onEmgCallback = { emg -> emgDataState.value = emg },
+                    onGyroCallback = { gyro -> gyroDataState.value = gyro }
+                )
+            },
+            onDeviceDisconnected = {
+                DataManager.removeService()
+            },
         )
         VerticalSpacer(height = 40.dp)
         val boxWidth = config.screenWidthDp.dp - horizontalPadding * 2
@@ -123,7 +98,8 @@ fun Main(
 @Composable
 fun BleFinderMenu(
     finder: MyoBleFinder?,
-    onDeviceConnected: (MyoBleService) -> Unit
+    onDeviceConnected: (MyoBleService) -> Unit,
+    onDeviceDisconnected: () -> Unit
 ) {
     val context = LocalContext.current
     var selected by remember {
@@ -134,7 +110,6 @@ fun BleFinderMenu(
             )
         )
     }
-    val connectionState = remember { mutableStateOf(false) }
     val devices = mutableListOf<Pair<String, BleDevice>>()
     FinderMenu(
         value = selected.first,
@@ -162,24 +137,27 @@ fun BleFinderMenu(
                 }
             })
         },
-        onSelected = { loading, clicked, expanded, it ->
+        onSelected = { loading, clicked, expanded, connectionState, it ->
             loading.value = false
             val delegate = BleDelegateDefaultImpl(it.second)
             val service = MyoBleService(delegate)
-            CoroutineScope(Dispatchers.Main).launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 if (service.connect()) {
                     connectionState.value = true
                     selected = it
                     onDeviceConnected(service)
                 } else {
                     connectionState.value = false
-                    ToastManager.showToast(context, context.getString(R.string.key_connect_fail))
                 }
                 clicked.value = false
                 expanded.value = false
             }
         },
-        connectionState = connectionState,
+        onUnselected = {connectionState ->
+            onDeviceDisconnected()
+            connectionState.value = false
+            selected = Pair(context.getString(R.string.key_select_devices), null)
+        },
         backgroundColor = Color(0xFFE0E0E0)
     )
 }

@@ -1,12 +1,54 @@
 package com.roumai.myodecoder.core
 
 import androidx.compose.runtime.mutableStateOf
+import com.roumai.myodecoder.device.ble.MyoBleService
+import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentHashMap
 
 object DataManager {
-    var isActive = false
+    private val service = mutableStateOf<MyoBleService?>(null)
     private val emgData = ConcurrentHashMap<Long, Pair<Long, IntArray>>()
     private val gyro = mutableStateOf(Triple(0f, 0f, 0f))
+
+    fun startService(
+        s: MyoBleService,
+        onEmgCallback: (List<Pair<Long, Float?>>) -> Unit,
+        onGyroCallback: (Triple<Float, Float, Float>) -> Unit
+    ) {
+        service.value = s
+        CoroutineScope(Dispatchers.IO).launch {
+            service.value!!.observeEMG { dataList ->
+                dataList.forEach { data ->
+                    addEmg(data.first, data.second)
+                }
+            }
+            service.value!!.observeIMU { data ->
+                val x = data.second[4]
+                val y = data.second[5]
+                val z = data.second[6]
+                updateGyro(x, y, z)
+            }
+            service.value!!.observeRMS {
+
+            }
+        }
+        CoroutineScope(Dispatchers.Main).launch {
+            while (service.value != null) {
+                val emgData = getEmg()
+                onEmgCallback(emgData)
+                val gyroData = getGyro()
+                onGyroCallback(gyroData.value)
+                delay(10L)
+            }
+        }
+    }
+
+    fun removeService() {
+        CoroutineScope(Dispatchers.IO).launch {
+            service.value?.disconnect()
+            service.value = null
+        }
+    }
 
     fun addEmg(timestamp: Long, data: IntArray) {
         emgData[timestamp] = Pair(timestamp, data)
