@@ -1,6 +1,5 @@
 package com.roumai.myodecoder.ui.components
 
-import android.graphics.Color.parseColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Offset
@@ -12,10 +11,9 @@ import androidx.compose.ui.unit.sp
 
 
 fun getSciTextStyle(
-    colorHex: String,
+    color: Color,
     fontSize: Float,
 ): TextStyle {
-    val color = Color(parseColor(colorHex))
     return TextStyle(
         color = color,
         fontSize = fontSize.sp,
@@ -31,11 +29,11 @@ fun getSciTextStyle(
 @Composable
 fun SciText(
     text: String,
-    colorHex: String,
+    color: Color,
     fontSize: Float,
 ) {
     Text(
         text = text,
-        style = getSciTextStyle(colorHex, fontSize)
+        style = getSciTextStyle(color, fontSize)
     )
 }

@@ -18,6 +18,7 @@ import com.roumai.myodecoder.device.ble.MyoBleFinder
 import com.roumai.myodecoder.device.ble.MyoBleService
 import com.roumai.myodecoder.device.ble.impl.BleDelegateDefaultImpl
 import com.roumai.myodecoder.ui.components.*
+import com.roumai.myodecoder.ui.theme.ColorSciBlue
 import com.roumai.myodecoder.ui.utils.ToastManager
 import kotlinx.coroutines.*
 
@@ -105,7 +106,7 @@ fun Main(
                         .height(40.dp)
                         .padding(horizontal = 10.dp)
                 ) {
-                    SciText(text = "EMG", colorHex = "#5ebdb2", fontSize = 20f)
+                    SciText(text = "EMG", color = ColorSciBlue, fontSize = 20f)
                 }
                 EmgRtWindow(
                     modifier = Modifier

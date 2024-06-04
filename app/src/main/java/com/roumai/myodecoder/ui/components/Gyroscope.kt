@@ -22,6 +22,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.roumai.myodecoder.ui.theme.ColorSciBlue
 import kotlin.math.PI
 import kotlin.math.atan
 import kotlin.math.min
@@ -113,7 +114,7 @@ fun Gyroscope(
             rotate(degrees = rotation * 180 / PI.toFloat(), pivot = center) {
                 val degree = sqrt(x * x + y * y)
                 val offset = (if (degree < 10) 18 else 28) + (if (z < 0) 0 else -6)
-                val textStyle = getSciTextStyle("#5ebdb2", 32f)
+                val textStyle = getSciTextStyle(ColorSciBlue, 32f)
                 drawText(
                     textMeasurer,
                     text = "${if (z < 0) "-" else ""}${degree.toInt()}˚",
