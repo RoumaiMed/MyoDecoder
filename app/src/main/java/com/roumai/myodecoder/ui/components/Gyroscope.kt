@@ -22,15 +22,17 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.roumai.myodecoder.ui.theme.ColorBlack
 import com.roumai.myodecoder.ui.theme.ColorSciBlue
+import com.roumai.myodecoder.ui.theme.ColorWhite
 import kotlin.math.PI
 import kotlin.math.atan
 import kotlin.math.min
 import kotlin.math.sqrt
 
 data class GyroscopeOption(
-    val backgroundColor: Color = Color.DarkGray,
-    val foregroundColor: Color = Color.White,
+    val backgroundColor: Color = ColorBlack,
+    val foregroundColor: Color = ColorWhite,
 )
 
 

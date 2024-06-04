@@ -26,6 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clj.fastble.data.BleDevice
 import com.roumai.myodecoder.R
+import com.roumai.myodecoder.ui.theme.ColorBlack
+import com.roumai.myodecoder.ui.theme.ColorDarkGray
+import com.roumai.myodecoder.ui.theme.ColorLightGray
+import com.roumai.myodecoder.ui.theme.ColorTransparent
 
 @Composable
 fun FinderMenu(
@@ -112,7 +116,7 @@ fun FinderMenu(
                                 }
                             ),
                         imageVector = Icons.Default.Refresh,
-                        tint = Color.Black,
+                        tint = ColorBlack,
                         contentDescription = "finding..."
                     )
                 } else {
@@ -147,8 +151,8 @@ fun FinderMenu(
                         modifier = Modifier
                             .height(32.dp)
                             .background(
-                                if (clicked.value) Color.LightGray
-                                else Color.Transparent
+                                if (clicked.value) ColorLightGray
+                                else ColorTransparent
                             ),
                         text = {
                             Column(
@@ -164,7 +168,7 @@ fun FinderMenu(
                                 Text(
                                     device.mac,
                                     fontSize = 12.sp,
-                                    color = Color.DarkGray
+                                    color = ColorDarkGray
                                 )
                             }
                         },

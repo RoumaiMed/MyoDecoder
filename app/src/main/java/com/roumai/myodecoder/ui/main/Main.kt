@@ -18,9 +18,13 @@ import com.roumai.myodecoder.device.ble.MyoBleFinder
 import com.roumai.myodecoder.device.ble.MyoBleService
 import com.roumai.myodecoder.device.ble.impl.BleDelegateDefaultImpl
 import com.roumai.myodecoder.ui.components.*
+import com.roumai.myodecoder.ui.theme.COLOR_BACKGROUND
 import com.roumai.myodecoder.ui.theme.ColorSciBlue
+import com.roumai.myodecoder.ui.theme.ColorWhite
 import com.roumai.myodecoder.ui.utils.ToastManager
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -32,7 +36,7 @@ fun Main(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF231815))
+            .background(COLOR_BACKGROUND)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -72,7 +76,7 @@ fun Main(
                 .fillMaxWidth()
                 .height(300.dp),
             horizontalPadding = horizontalPadding,
-            backgroundColor = Color(0xFF231815)
+            backgroundColor = COLOR_BACKGROUND
         ) {
             Column {
                 Row(
@@ -162,7 +166,7 @@ fun BleFinderMenu(
             connectionState.value = false
             selected = Pair(context.getString(R.string.key_select_devices), null)
         },
-        backgroundColor = Color(0xFFE0E0E0)
+        backgroundColor = ColorWhite
     )
 }
 
