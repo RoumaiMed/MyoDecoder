@@ -33,6 +33,7 @@ fun Main(
 ) {
     val emgDataState = remember { mutableStateOf<List<Pair<Long, Float?>>>(emptyList()) }
     val gyroDataState = remember { mutableStateOf(Triple(0f, 0f, 0f)) }
+    val angleState = remember { mutableStateOf(90f) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -68,6 +69,17 @@ fun Main(
                 modifier = Modifier
                     .fillMaxSize(),
                 data = gyroDataState.value,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .padding(horizontal = horizontalPadding)
+                .width(boxWidth)
+                .height(boxWidth)
+        ) {
+            CompassWindow(
+                modifier = Modifier.fillMaxSize(),
+                data = angleState.value
             )
         }
         VerticalSpacer(height = 40.dp)
@@ -195,6 +207,23 @@ fun GyroWindow(
         )
     }
     Gyroscope(
+        modifier = modifier,
+        data = data,
+        options = options
+    )
+}
+
+@Composable
+fun CompassWindow(
+    modifier: Modifier,
+    data: Float
+) {
+    val options = remember {
+        CompassOption(
+            Color(0xFF231815)
+        )
+    }
+    Compass(
         modifier = modifier,
         data = data,
         options = options

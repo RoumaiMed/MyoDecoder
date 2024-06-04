@@ -3,12 +3,15 @@ package com.roumai.myodecoder.core
 import androidx.compose.runtime.mutableStateOf
 import com.roumai.myodecoder.device.ble.MyoBleService
 import kotlinx.coroutines.*
+import java.lang.Math.toDegrees
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.atan2
 
 object DataManager {
     private val service = mutableStateOf<MyoBleService?>(null)
     private val emgData = ConcurrentHashMap<Long, Pair<Long, IntArray>>()
     private val gyro = mutableStateOf(Triple(0f, 0f, 0f))
+    private val angle = mutableStateOf(90f)
 
     fun startService(
         s: MyoBleService,
@@ -139,4 +142,14 @@ object DataManager {
 
     fun getGyro() = gyro
 
+    fun updateAngle(mx: Float, my: Float, mz: Float) {
+        var heading = atan2(my, mx)
+        heading = toDegrees(heading.toDouble()).toFloat()
+        if (heading < 0) {
+            heading += 360f
+        }
+        angle.value = heading
+    }
+
+    fun getAngle() = angle
 }
