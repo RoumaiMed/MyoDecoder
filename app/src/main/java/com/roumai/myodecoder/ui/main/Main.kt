@@ -91,6 +91,8 @@ fun Main(
                 )
             }
         }
+        VerticalSpacer(height = 20.dp)
+        ZoomTime()
     }
 }
 
