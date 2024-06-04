@@ -54,7 +54,7 @@ fun Main(
     ) {
         val config = LocalConfiguration.current
         val horizontalPadding = 12.dp
-        VerticalSpacer(height = 20)
+        VerticalSpacer(height = 20.dp)
         BleFinderMenu(
             finder = finder,
             onDeviceConnected = {
@@ -77,7 +77,7 @@ fun Main(
                 }
             }
         )
-        VerticalSpacer(height = 40)
+        VerticalSpacer(height = 40.dp)
         val boxWidth = config.screenWidthDp.dp - horizontalPadding * 2
         Box(
             modifier = Modifier
@@ -91,7 +91,7 @@ fun Main(
                 data = gyroDataState.value,
             )
         }
-        VerticalSpacer(height = 40)
+        VerticalSpacer(height = 40.dp)
         SciBox(
             modifier = Modifier
                 .fillMaxWidth()
