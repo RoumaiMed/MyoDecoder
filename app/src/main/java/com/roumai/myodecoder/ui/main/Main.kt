@@ -29,6 +29,7 @@ fun Main(
 ) {
     val emgDataState = remember { mutableStateOf<List<Pair<Long, Float?>>>(emptyList()) }
     val gyroDataState = remember { mutableStateOf(Triple(0f, 0f, 0f)) }
+    val angleState = remember { mutableStateOf(90f) }
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         coroutineScope.launch {
@@ -41,6 +42,8 @@ fun Main(
                 emgDataState.value = emgData
                 val gyroData = DataManager.getGyro()
                 gyroDataState.value = gyroData.value
+                val angle = DataManager.getAngle()
+                angleState.value = angle.value
                 delay(10L)
             }
         }
@@ -66,10 +69,14 @@ fun Main(
                         }
                     }
                     it.observeIMU { data ->
-                        val x = data.second[4]
-                        val y = data.second[5]
-                        val z = data.second[6]
-                        DataManager.updateGyro(x, y, z)
+                        val gx = data.second[4]
+                        val gy = data.second[5]
+                        val gz = data.second[6]
+                        DataManager.updateGyro(gx, gy, gz)
+                        val mx = data.second[7]
+                        val my = data.second[8]
+                        val mz = data.second[9]
+                        DataManager.updateAngle(mx, my, mz)
                     }
                     it.observeRMS {
 
@@ -89,6 +96,17 @@ fun Main(
                 modifier = Modifier
                     .fillMaxSize(),
                 data = gyroDataState.value,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .padding(horizontal = horizontalPadding)
+                .width(boxWidth)
+                .height(boxWidth)
+        ) {
+            CompassWindow(
+                modifier = Modifier.fillMaxSize(),
+                data = angleState.value
             )
         }
         VerticalSpacer(height = 40.dp)
@@ -209,6 +227,23 @@ fun GyroWindow(
         )
     }
     Gyroscope(
+        modifier = modifier,
+        data = data,
+        options = options
+    )
+}
+
+@Composable
+fun CompassWindow(
+    modifier: Modifier,
+    data: Float
+) {
+    val options = remember {
+        CompassOption(
+            Color(0xFF231815)
+        )
+    }
+    Compass(
         modifier = modifier,
         data = data,
         options = options
