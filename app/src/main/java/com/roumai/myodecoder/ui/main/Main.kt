@@ -113,7 +113,12 @@ fun Main(
         VerticalSpacer(height = 20.dp)
         ZoomScale()
         VerticalSpacer(height = 20.dp)
-        OptionItem()
+        OptionItem(
+            text = "50 HZ and 50 HZ Harmonic Filtering",
+            onCheckedChange = {
+                GlobalConfig.enableFiltering = it
+            }
+        )
     }
 }
 

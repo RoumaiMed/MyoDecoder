@@ -13,11 +13,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.roumai.myodecoder.core.GlobalConfig
 import com.roumai.myodecoder.ui.theme.ColorWhite
 
 @Composable
-fun OptionItem() {
+fun OptionItem(
+    text: String,
+    onCheckedChange: (Boolean) -> Unit
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -25,7 +27,7 @@ fun OptionItem() {
             modifier = Modifier.fillMaxWidth(0.5f),
             horizontalArrangement = Arrangement.Center,
         ) {
-            Text(text = "50 HZ and 50 HZ Harmonic Filtering", color = ColorWhite)
+            Text(text = text, color = ColorWhite)
         }
         Row(
             modifier = Modifier.fillMaxWidth(0.5f),
@@ -35,7 +37,7 @@ fun OptionItem() {
             Switch(
                 checked = checked,
                 onCheckedChange = {
-                    GlobalConfig.enableFiltering = it
+                    onCheckedChange(it)
                     checked = it
                 },
                 thumbContent = if (checked) {
