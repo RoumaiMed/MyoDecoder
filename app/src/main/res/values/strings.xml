@@ -3,4 +3,6 @@
     <string name="key_select_devices">Select Bluetooth Devices</string>
     <string name="key_enable_bluetooth">Please enable Bluetooth first</string>
     <string name="key_connect_fail">Fail to connect to the device</string>
+    <string name="key_store_data">%s data saved to %s</string>
+    <string name="key_store_data_fail">Fail to save data</string>
 </resources>

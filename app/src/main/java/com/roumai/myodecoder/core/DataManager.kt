@@ -12,6 +12,17 @@ object DataManager {
     private val emgData = ConcurrentHashMap<Long, Pair<Long, IntArray>>()
     private val gyro = mutableStateOf(Triple(0f, 0f, 0f))
     private val angle = mutableStateOf(90f)
+    private var recordingDir = ""
+    private val recordEmg = mutableStateOf(false)
+    private var emgCsvFile: CSV? = null
+    private val recordImu = mutableStateOf(false)
+    private var imuCsvFile: CSV? = null
+
+    fun setRecordingDir(dir: String) {
+        recordingDir = dir
+    }
+
+    fun getRecordingDir() = recordingDir
 
     fun startService(
         s: MyoBleService,
@@ -24,9 +35,15 @@ object DataManager {
             service.value!!.observeEMG { dataList ->
                 dataList.forEach { data ->
                     addEmg(data.first, data.second)
+                    if (recordEmg.value) {
+                        emgCsvFile?.append(data.first, data.second)
+                    }
                 }
             }
             service.value!!.observeIMU { data ->
+                if (recordImu.value) {
+                    imuCsvFile?.append(data.first, data.second)
+                }
                 val gx = data.second[4]
                 val gy = data.second[5]
                 val gz = data.second[6]
@@ -58,6 +75,32 @@ object DataManager {
             service.value?.disconnect()
             service.value = null
         }
+    }
+
+    fun startRecordEmg() {
+        recordEmg.value = true
+        emgCsvFile = CSV(CSVType.EMG, GlobalConfig.CHANNEL_NUM)
+    }
+
+    fun stopRecordEmg(): String? {
+        recordEmg.value = false
+        emgCsvFile?.close()
+        val path = emgCsvFile?.getPath()
+        emgCsvFile = null
+        return path
+    }
+
+    fun startRecordImu() {
+        recordImu.value = true
+        imuCsvFile = CSV(CSVType.IMU, 9)
+    }
+
+    fun stopRecordImu(): String? {
+        recordImu.value = false
+        imuCsvFile?.close()
+        val path = imuCsvFile?.getPath()
+        imuCsvFile = null
+        return path
     }
 
     fun addEmg(timestamp: Long, data: IntArray) {

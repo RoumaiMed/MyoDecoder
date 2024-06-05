@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 fun Main(
     finder: MyoBleFinder?
 ) {
+    val context = LocalContext.current
     val emgDataState = remember { mutableStateOf<List<Pair<Long, Float?>>>(emptyList()) }
     val gyroDataState = remember { mutableStateOf(Triple(0f, 0f, 0f)) }
     val angleState = remember { mutableStateOf(90f) }
@@ -119,6 +120,36 @@ fun Main(
                 GlobalConfig.enableFiltering = it
             }
         )
+        OptionItem(
+            text = "EMG Recording",
+            onCheckedChange = {
+                if (it) {
+                    DataManager.startRecordEmg()
+                } else {
+                    val path = DataManager.stopRecordEmg()
+                    if (path != null) {
+                        ToastManager.showToast(context, context.getString(R.string.key_store_data, "EMG", path))
+                    } else {
+                        ToastManager.showToast(context, context.getString(R.string.key_store_data_fail))
+                    }
+                }
+            }
+        )
+        OptionItem(
+            text = "IMU Recording",
+            onCheckedChange = {
+                if (it) {
+                    DataManager.startRecordImu()
+                } else {
+                    val path = DataManager.stopRecordImu()
+                    if (path != null) {
+                        ToastManager.showToast(context, context.getString(R.string.key_store_data, "IMU", path))
+                    } else {
+                        ToastManager.showToast(context, context.getString(R.string.key_store_data_fail))
+                    }
+                }
+            }
+        )
     }
 }
 
@@ -181,7 +212,7 @@ fun BleFinderMenu(
                 expanded.value = false
             }
         },
-        onUnselected = {connectionState ->
+        onUnselected = { connectionState ->
             onDeviceDisconnected()
             connectionState.value = false
             selected = Pair(context.getString(R.string.key_select_devices), null)
