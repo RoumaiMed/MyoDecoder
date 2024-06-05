@@ -179,22 +179,24 @@ fun BleFinderMenu(
                 return@FinderMenu
             }
             devices.clear()
-            finder?.enableDebug(true)
-            finder?.scan(object : MyoBleFinder.OnFinderUpdate {
-                override fun onStart() {
-                    it.value = true
-                }
-
-                override fun onFound(peripheral: BleDevice) {
-                    devices.add(peripheral.mac to peripheral)
-                }
-
-                override fun onStop(peripherals: List<BleDevice>) {
-                    if (it.value) {
-                        it.value = false
+            CoroutineScope(Dispatchers.IO).launch {
+                finder?.enableDebug(true)
+                finder?.scan(object : MyoBleFinder.OnFinderUpdate {
+                    override fun onStart() {
+                        it.value = true
                     }
-                }
-            })
+
+                    override fun onFound(peripheral: BleDevice) {
+                        devices.add(peripheral.mac to peripheral)
+                    }
+
+                    override fun onStop(peripherals: List<BleDevice>) {
+                        if (it.value) {
+                            it.value = false
+                        }
+                    }
+                })
+            }
         },
         onSelected = { loading, clicked, expanded, connectionState, it ->
             loading.value = false
