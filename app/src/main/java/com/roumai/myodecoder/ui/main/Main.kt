@@ -7,13 +7,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.clj.fastble.data.BleDevice
 import com.roumai.myodecoder.R
 import com.roumai.myodecoder.core.DataManager
+import com.roumai.myodecoder.core.GlobalConfig
 import com.roumai.myodecoder.device.ble.MyoBleFinder
 import com.roumai.myodecoder.device.ble.MyoBleService
 import com.roumai.myodecoder.device.ble.impl.BleDelegateDefaultImpl
@@ -111,6 +111,8 @@ fun Main(
         VerticalSpacer(height = 20.dp)
         ZoomTime()
         VerticalSpacer(height = 20.dp)
+        ZoomScale()
+        VerticalSpacer(height = 20.dp)
         OptionItem()
     }
 }
@@ -188,11 +190,10 @@ fun EmgRtWindow(
     modifier: Modifier,
     emgDataState: MutableState<List<Pair<Long, Float?>>>,
 ) {
-    val options = remember { RTWindowOption() }
     RTWindow(
         modifier = modifier,
         data = emgDataState.value,
-        options = options
+        options = GlobalConfig.rtWindowOption
     )
 }
 
@@ -201,16 +202,10 @@ fun GyroWindow(
     modifier: Modifier,
     data: Triple<Float, Float, Float>
 ) {
-    val options = remember {
-        GyroscopeOption(
-            Color(0xFF231815),
-            Color.White
-        )
-    }
     Gyroscope(
         modifier = modifier,
         data = data,
-        options = options
+        options = GlobalConfig.gyroscopeOption
     )
 }
 
@@ -219,14 +214,9 @@ fun CompassWindow(
     modifier: Modifier,
     data: Float
 ) {
-    val options = remember {
-        CompassOption(
-            Color(0xFF231815)
-        )
-    }
     Compass(
         modifier = modifier,
         data = data,
-        options = options
+        options = GlobalConfig.compassOption
     )
 }
