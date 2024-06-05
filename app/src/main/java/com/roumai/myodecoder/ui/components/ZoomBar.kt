@@ -21,13 +21,13 @@ fun ZoomTime() {
         horizontalArrangement = Arrangement.Center
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(0.15f),
+            modifier = Modifier.fillMaxWidth(0.18f),
             horizontalArrangement = Arrangement.Center,
         ) {
             Text("%.3fs".format(GlobalConfig.windowSize.toFloat() / 1000f), color = ColorWhite)
         }
         Slider(
-            modifier = Modifier.fillMaxWidth(0.65f),
+            modifier = Modifier.fillMaxWidth(0.62f),
             value = GlobalConfig.windowSize.toFloat() / 1000f,
             valueRange = 0.1f..10f,
             onValueChange = {
@@ -66,13 +66,13 @@ fun ZoomScale() {
         horizontalArrangement = Arrangement.Center
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(0.15f),
+            modifier = Modifier.fillMaxWidth(0.18f),
             horizontalArrangement = Arrangement.Center,
         ) {
             Text("×%.3f".format(GlobalConfig.rtWindowOption.voltScale.value), color = ColorWhite)
         }
         Slider(
-            modifier = Modifier.fillMaxWidth(0.65f),
+            modifier = Modifier.fillMaxWidth(0.62f),
             value = GlobalConfig.rtWindowOption.voltScale.value,
             valueRange = 0.1f..10f,
             onValueChange = {
