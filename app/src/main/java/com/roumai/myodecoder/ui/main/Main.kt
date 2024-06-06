@@ -169,7 +169,7 @@ fun BleFinderMenu(
             )
         )
     }
-    val devices = mutableListOf<Pair<String, BleDevice>>()
+    val devices = remember { mutableListOf<Pair<String, BleDevice>>() }
     FinderMenu(
         value = selected.first,
         items = devices,
@@ -178,8 +178,8 @@ fun BleFinderMenu(
                 ToastManager.showToast(context, context.getString(R.string.key_enable_bluetooth))
                 return@FinderMenu
             }
-            devices.clear()
             CoroutineScope(Dispatchers.IO).launch {
+                devices.clear()
                 finder?.enableDebug(true)
                 finder?.scan(object : MyoBleFinder.OnFinderUpdate {
                     override fun onStart() {
@@ -187,6 +187,7 @@ fun BleFinderMenu(
                     }
 
                     override fun onFound(peripheral: BleDevice) {
+                        devices.removeIf { it.first == peripheral.mac }
                         devices.add(peripheral.mac to peripheral)
                     }
 

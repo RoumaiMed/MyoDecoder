@@ -34,7 +34,7 @@ import com.roumai.myodecoder.ui.theme.ColorTransparent
 @Composable
 fun FinderMenu(
     value: String,
-    items: List<Pair<String, BleDevice>>,
+    items: MutableList<Pair<String, BleDevice>>,
     onFinding: (MutableState<Boolean>) -> Unit,
     onSelected: (
         MutableState<Boolean>, MutableState<Boolean>, MutableState<Boolean>, MutableState<Boolean>,
