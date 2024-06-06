@@ -26,9 +26,8 @@ class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        checkPermissions()
+        checkBlePermission()
         hideSystemUI()
-        DataManager.setRecordingDir(getExternalFilesDir(null)!!.absolutePath)
         setContent {
             MyoDecoderTheme {
                 Surface(
@@ -52,12 +51,6 @@ class MainActivity : AppCompatActivity() {
         window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN
                 or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
-    }
-
-    fun checkPermissions(): Boolean {
-        val ble = checkBlePermission()
-        val file = checkFilePermission()
-        return ble && file
     }
 
     fun checkBlePermission(): Boolean {
@@ -143,6 +136,12 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == 1) {
             bleFinder.value = MyoBleFinder(true)
             BleDelegateDefaultImpl.init(this.application)
+            checkFilePermission()
+        }
+        if (requestCode == 2) {
+            // file auth...
+            // init file path...
+            DataManager.setRecordingDir(getExternalFilesDir(null)!!.absolutePath)
         }
     }
 }

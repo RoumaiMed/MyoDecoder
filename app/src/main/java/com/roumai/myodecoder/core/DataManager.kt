@@ -2,9 +2,19 @@ package com.roumai.myodecoder.core
 
 import androidx.compose.runtime.mutableStateOf
 import com.roumai.myodecoder.device.ble.MyoBleService
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.newSingleThreadContext
+import kotlinx.coroutines.withContext
 import java.lang.Math.toDegrees
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.coroutines.CoroutineContext
 import kotlin.math.atan2
 
 object DataManager {
@@ -24,53 +34,66 @@ object DataManager {
 
     fun getRecordingDir() = recordingDir
 
+    private var serviceJob: Job? = null
+    private var uiJob: Job? = null
+
+    @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
     fun startService(
-        s: MyoBleService,
+        service: MyoBleService,
         onEmgCallback: (List<Pair<Long, Float?>>) -> Unit,
         onGyroCallback: (Triple<Float, Float, Float>) -> Unit,
         onAngleCallback: (Float) -> Unit
     ) {
-        service.value = s
-        CoroutineScope(Dispatchers.IO).launch {
-            service.value!!.observeEMG { dataList ->
-                dataList.forEach { data ->
-                    addEmg(data.first, data.second)
-                    if (recordEmg.value) {
-                        emgCsvFile?.append(data.first, data.second)
+        DataManager.service.value = service
+        serviceJob?.cancel()
+        serviceJob = CoroutineScope(Dispatchers.IO).launch {
+            DataManager.service.value?.let {
+                it.observeEMG { dataList ->
+                    dataList.forEach { data ->
+                        addEmg(data.first, data.second)
+                        if (recordEmg.value) {
+                            emgCsvFile?.append(data.first, data.second)
+                        }
                     }
                 }
-            }
-            service.value!!.observeIMU { data ->
-                if (recordImu.value) {
-                    imuCsvFile?.append(data.first, data.second)
+                it.observeIMU { data ->
+                    if (recordImu.value) {
+                        imuCsvFile?.append(data.first, data.second)
+                    }
+                    val gx = data.second[4]
+                    val gy = data.second[5]
+                    val gz = data.second[6]
+                    updateGyro(gx, gy, gz)
+                    val mx = data.second[7]
+                    val my = data.second[8]
+                    val mz = data.second[9]
+                    updateAngle(mx, my, mz)
                 }
-                val gx = data.second[4]
-                val gy = data.second[5]
-                val gz = data.second[6]
-                updateGyro(gx, gy, gz)
-                val mx = data.second[7]
-                val my = data.second[8]
-                val mz = data.second[9]
-                updateAngle(mx, my, mz)
-            }
-            service.value!!.observeRMS {
+                it.observeRMS {
 
+                }
             }
         }
-        CoroutineScope(Dispatchers.Main).launch {
-            while (service.value != null) {
-                val emgData = getEmg()
-                onEmgCallback(emgData)
+        uiJob?.cancel()
+        uiJob = CoroutineScope(newSingleThreadContext("DataProcess")).launch {
+            while (isActive && DataManager.service.value != null) {
+//                val emgData = getEmg()
+                val currentAt = System.currentTimeMillis()
+                val emgData = fetchEMG(emgData, (currentAt - GlobalConfig.windowSize) until currentAt, 1)
                 val gyroData = getGyro()
-                onGyroCallback(gyroData.value)
                 val angleData = getAngle()
-                onAngleCallback(angleData.value)
+                withContext(Dispatchers.Main) {
+                    onEmgCallback(emgData)
+                    onGyroCallback(gyroData.value)
+                    onAngleCallback(angleData.value)
+                }
                 delay(10L)
             }
         }
     }
 
     fun removeService() {
+        serviceJob?.cancel()
         CoroutineScope(Dispatchers.IO).launch {
             service.value?.disconnect()
             service.value = null
@@ -111,6 +134,49 @@ object DataManager {
                 .take(emgData.size - GlobalConfig.DATA_STORE_SIZE)
                 .forEach { emgData.remove(it) }
         }
+    }
+
+    private fun fetchEMG(
+        data: ConcurrentHashMap<Long, Pair<Long, IntArray>>,
+        range: LongRange,
+        minInterval: Long, // in ms
+    ): MutableList<Pair<Long, Float?>> {
+        val result = mutableListOf<Pair<Long, Float?>>()
+
+        for (t in range step minInterval) {
+            val volt = data[t]?.second?.first()?.let {
+                (it - 8192) / 8192.0f * 1.65f
+            }
+            result.add(Pair(t, volt))
+        }
+
+        if (GlobalConfig.enableFiltering) {
+            var filteredSignal = result.map { it.second?.toDouble() ?: 0.0 }.toDoubleArray()
+            arrayOf(
+                Pair(48.0, 52.0),
+                Pair(98.0, 102.0),
+                Pair(148.0, 152.0),
+                Pair(198.0, 202.0),
+                Pair(248.0, 252.0),
+                Pair(298.0, 302.0),
+                Pair(348.0, 352.0),
+                Pair(398.0, 402.0),
+                Pair(448.0, 452.0),
+            ).forEach {
+                filteredSignal = SignalProcessor.filter(
+                    data = filteredSignal,
+                    samplingRate = GlobalConfig.SAMPLE_RATE.toDouble(),
+                    frequencyInterval = it,
+                )
+            }
+            // update result value if value is not null
+            for (i in result.indices) {
+                if (result[i].second == null) continue
+                result[i] = Pair(result[i].first, filteredSignal[i].toFloat())
+            }
+        }
+
+        return result
     }
 
     fun getEmg(): MutableList<Pair<Long, Float?>> {
@@ -176,7 +242,12 @@ object DataManager {
                 Pair(448.0, 452.0)
             )
             for (i in idxArr.indices) {
-                result.add(Pair(rawSignal[i].first, if (idxArr[i]) null else filteredSignal[i].toFloat()))
+                result.add(
+                    Pair(
+                        rawSignal[i].first,
+                        if (idxArr[i]) null else filteredSignal[i].toFloat()
+                    )
+                )
             }
         } else {
             for (i in idxArr.indices) {
