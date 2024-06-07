@@ -152,17 +152,8 @@ object DataManager {
 
         if (GlobalConfig.enableFiltering) {
             var filteredSignal = result.map { it.second?.toDouble() ?: 0.0 }.toDoubleArray()
-            arrayOf(
-                Pair(48.0, 52.0),
-                Pair(98.0, 102.0),
-                Pair(148.0, 152.0),
-                Pair(198.0, 202.0),
-                Pair(248.0, 252.0),
-                Pair(298.0, 302.0),
-                Pair(348.0, 352.0),
-                Pair(398.0, 402.0),
-                Pair(448.0, 452.0),
-            ).forEach {
+            val frequency = 50.0
+            (1..9).map { Pair(it * frequency - 2, it * frequency + 2) }.forEach {
                 filteredSignal = SignalProcessor.filter(
                     data = filteredSignal,
                     samplingRate = GlobalConfig.SAMPLE_RATE.toDouble(),
