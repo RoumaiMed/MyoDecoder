@@ -19,23 +19,33 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clj.fastble.data.BleDevice
+import com.roumai.myodecoder.R
+import com.roumai.myodecoder.ui.theme.ColorBlack
+import com.roumai.myodecoder.ui.theme.ColorDarkGray
+import com.roumai.myodecoder.ui.theme.ColorLightGray
+import com.roumai.myodecoder.ui.theme.ColorTransparent
 
 @Composable
 fun FinderMenu(
     value: String,
-    items: List<Pair<String, BleDevice>>,
+    items: MutableList<Pair<String, BleDevice>>,
     onFinding: (MutableState<Boolean>) -> Unit,
-    onSelected: (MutableState<Boolean>, MutableState<Boolean>, MutableState<Boolean>, Pair<String, BleDevice>) -> Unit,
-    connectionState: MutableState<Boolean>,
+    onSelected: (
+        MutableState<Boolean>, MutableState<Boolean>, MutableState<Boolean>, MutableState<Boolean>,
+        Pair<String, BleDevice>
+    ) -> Unit,
+    onUnselected: (MutableState<Boolean>) -> Unit,
     backgroundColor: Color
 ) {
     val expanded = remember { mutableStateOf(false) }
     val loading = remember { mutableStateOf(false) }
+    val connectionState = remember { mutableStateOf(false) }
     val rotation = if (loading.value) {
         val infiniteTransition = rememberInfiniteTransition(label = "transition")
         infiniteTransition.animateFloat(
@@ -85,29 +95,45 @@ fun FinderMenu(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Icon(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .rotate(rotation.value)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = {
-                                if (!loading.value && expanded.value) {
-                                    expanded.value = false
-                                }
-                                if (!loading.value && !connectionState.value) {
-                                    onFinding(loading)
-                                    if (loading.value) {
-                                        expanded.value = true
+                if (!connectionState.value) {
+                    Icon(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .rotate(rotation.value)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {
+                                    if (!loading.value && expanded.value) {
+                                        expanded.value = false
+                                    }
+                                    if (!loading.value && !connectionState.value) {
+                                        onFinding(loading)
+                                        if (loading.value) {
+                                            expanded.value = true
+                                        }
                                     }
                                 }
-                            }
-                        ),
-                    imageVector = Icons.Default.Refresh,
-                    tint = Color.Black,
-                    contentDescription = "finding..."
-                )
+                            ),
+                        imageVector = Icons.Default.Refresh,
+                        tint = ColorBlack,
+                        contentDescription = "finding..."
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(id = R.drawable.bt),
+                        contentDescription = "connected",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {
+                                    onUnselected(connectionState)
+                                }
+                            ),
+                    )
+                }
             }
             DropdownMenu(
                 modifier = Modifier
@@ -125,8 +151,8 @@ fun FinderMenu(
                         modifier = Modifier
                             .height(32.dp)
                             .background(
-                                if (clicked.value) Color.LightGray
-                                else Color.Transparent
+                                if (clicked.value) ColorLightGray
+                                else ColorTransparent
                             ),
                         text = {
                             Column(
@@ -142,7 +168,7 @@ fun FinderMenu(
                                 Text(
                                     device.mac,
                                     fontSize = 12.sp,
-                                    color = Color.DarkGray
+                                    color = ColorDarkGray
                                 )
                             }
                         },
@@ -152,7 +178,7 @@ fun FinderMenu(
                             }
                             oneClicked.value = true
                             clicked.value = true
-                            onSelected(loading, clicked, expanded, item)
+                            onSelected(loading, clicked, expanded, connectionState, item)
                         }
                     )
                 }

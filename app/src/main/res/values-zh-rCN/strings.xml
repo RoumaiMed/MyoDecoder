@@ -4,4 +4,6 @@
     <string name="key_select_devices">查找蓝牙设备</string>
     <string name="key_enable_bluetooth">请打开系统蓝牙</string>
     <string name="key_connect_fail">连接蓝牙设备失败</string>
+    <string name="key_store_data">%s数据存储于%s</string>
+    <string name="key_store_data_fail">数据存储失败</string>
 </resources>

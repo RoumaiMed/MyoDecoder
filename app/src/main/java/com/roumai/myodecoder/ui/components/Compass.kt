@@ -15,11 +15,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.roumai.myodecoder.R
+import com.roumai.myodecoder.ui.theme.ColorBlack
 import kotlin.math.cos
 import kotlin.math.sin
 
 data class CompassOption(
-    val backgroundColor: Color = Color.Black,
+    val backgroundColor: Color = ColorBlack,
 )
 
 @Composable

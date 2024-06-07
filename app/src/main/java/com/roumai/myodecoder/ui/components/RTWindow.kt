@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,8 +34,6 @@ data class RTWindowOption(
     val padding: PaddingValues = PaddingValues(0.dp, 0.dp),
     val roundedSize: Dp = 6.dp,
     val boldLine: Boolean = true,
-    val voltScale: Float = 1f,
-    val voltOrigin: Float = 0f,
     val tickCount: Int = 5,
     val verticalPadding: Dp = 4.dp,
     val horizontalPadding: Dp = 4.dp,
@@ -41,6 +41,7 @@ data class RTWindowOption(
     val showPacketLoss: Boolean = true,
     val showXAxis: Boolean = true,
     val showYAxis: Boolean = true,
+    var voltScale: MutableState<Float> = mutableStateOf(1f),
 )
 
 @Composable
@@ -54,7 +55,6 @@ fun RTWindow(
     val xAxis = remember { Path() }
     val yAxis = remember { Path() }
     val voltScale = options.voltScale
-    val voltOrigin = options.voltOrigin
     Box(modifier = modifier) {
         Canvas(
             modifier = Modifier
@@ -77,7 +77,7 @@ fun RTWindow(
             data.forEachIndexed { idx, (ts, voltage) ->
                 val x = (ts - data[0].first) / dense + initialX
                 if (voltage != null) {
-                    val volt = voltage * voltScale + voltOrigin
+                    val volt = voltage * voltScale.value
                     val y = yMiddle + volt / options.voltRange * graphHeight / 2
                     if (!pathStarted) {
                         path.moveTo(x, y)

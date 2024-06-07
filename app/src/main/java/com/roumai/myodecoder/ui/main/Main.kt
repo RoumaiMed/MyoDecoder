@@ -7,51 +7,38 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.clj.fastble.data.BleDevice
 import com.roumai.myodecoder.R
 import com.roumai.myodecoder.core.DataManager
+import com.roumai.myodecoder.core.GlobalConfig
 import com.roumai.myodecoder.device.ble.MyoBleFinder
 import com.roumai.myodecoder.device.ble.MyoBleService
 import com.roumai.myodecoder.device.ble.impl.BleDelegateDefaultImpl
 import com.roumai.myodecoder.ui.components.*
+import com.roumai.myodecoder.ui.theme.COLOR_BACKGROUND
 import com.roumai.myodecoder.ui.theme.ColorSciBlue
+import com.roumai.myodecoder.ui.theme.ColorWhite
 import com.roumai.myodecoder.ui.utils.ToastManager
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 @Composable
 fun Main(
     finder: MyoBleFinder?
 ) {
+    val context = LocalContext.current
     val emgDataState = remember { mutableStateOf<List<Pair<Long, Float?>>>(emptyList()) }
     val gyroDataState = remember { mutableStateOf(Triple(0f, 0f, 0f)) }
     val angleState = remember { mutableStateOf(90f) }
-    val coroutineScope = rememberCoroutineScope()
-    LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            while (isActive) {
-                if (!DataManager.isActive) {
-                    delay(1000L)
-                    continue
-                }
-                val emgData = DataManager.getEmg()
-                emgDataState.value = emgData
-                val gyroData = DataManager.getGyro()
-                gyroDataState.value = gyroData.value
-                val angle = DataManager.getAngle()
-                angleState.value = angle.value
-                delay(10L)
-            }
-        }
-    }
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF231815))
+            .background(COLOR_BACKGROUND)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -61,28 +48,16 @@ fun Main(
         BleFinderMenu(
             finder = finder,
             onDeviceConnected = {
-                DataManager.isActive = true
-                CoroutineScope(Dispatchers.IO).launch {
-                    it.observeEMG { dataList ->
-                        dataList.forEach { data ->
-                            DataManager.addEmg(data.first, data.second)
-                        }
-                    }
-                    it.observeIMU { data ->
-                        val gx = data.second[4]
-                        val gy = data.second[5]
-                        val gz = data.second[6]
-                        DataManager.updateGyro(gx, gy, gz)
-                        val mx = data.second[7]
-                        val my = data.second[8]
-                        val mz = data.second[9]
-                        DataManager.updateAngle(mx, my, mz)
-                    }
-                    it.observeRMS {
-
-                    }
-                }
-            }
+                DataManager.startService(
+                    it,
+                    onEmgCallback = { emg -> emgDataState.value = emg },
+                    onGyroCallback = { gyro -> gyroDataState.value = gyro },
+                    onAngleCallback = { angle -> angleState.value = angle }
+                )
+            },
+            onDeviceDisconnected = {
+                DataManager.removeService()
+            },
         )
         VerticalSpacer(height = 40.dp)
         val boxWidth = config.screenWidthDp.dp - horizontalPadding * 2
@@ -115,7 +90,7 @@ fun Main(
                 .fillMaxWidth()
                 .height(300.dp),
             horizontalPadding = horizontalPadding,
-            backgroundColor = Color(0xFF231815)
+            backgroundColor = COLOR_BACKGROUND
         ) {
             Column {
                 Row(
@@ -134,6 +109,47 @@ fun Main(
                 )
             }
         }
+        VerticalSpacer(height = 20.dp)
+        ZoomTime()
+        VerticalSpacer(height = 20.dp)
+        ZoomScale()
+        VerticalSpacer(height = 20.dp)
+        OptionItem(
+            text = "50 HZ and 50 HZ Harmonic Filtering",
+            onCheckedChange = {
+                GlobalConfig.enableFiltering = it
+            }
+        )
+        OptionItem(
+            text = "EMG Recording",
+            onCheckedChange = {
+                if (it) {
+                    DataManager.startRecordEmg()
+                } else {
+                    val path = DataManager.stopRecordEmg()
+                    if (path != null) {
+                        ToastManager.showToast(context, context.getString(R.string.key_store_data, "EMG", path))
+                    } else {
+                        ToastManager.showToast(context, context.getString(R.string.key_store_data_fail))
+                    }
+                }
+            }
+        )
+        OptionItem(
+            text = "IMU Recording",
+            onCheckedChange = {
+                if (it) {
+                    DataManager.startRecordImu()
+                } else {
+                    val path = DataManager.stopRecordImu()
+                    if (path != null) {
+                        ToastManager.showToast(context, context.getString(R.string.key_store_data, "IMU", path))
+                    } else {
+                        ToastManager.showToast(context, context.getString(R.string.key_store_data_fail))
+                    }
+                }
+            }
+        )
     }
 }
 
@@ -141,7 +157,8 @@ fun Main(
 @Composable
 fun BleFinderMenu(
     finder: MyoBleFinder?,
-    onDeviceConnected: (MyoBleService) -> Unit
+    onDeviceConnected: (MyoBleService) -> Unit,
+    onDeviceDisconnected: () -> Unit
 ) {
     val context = LocalContext.current
     var selected by remember {
@@ -152,8 +169,7 @@ fun BleFinderMenu(
             )
         )
     }
-    val connectionState = remember { mutableStateOf(false) }
-    val devices = mutableListOf<Pair<String, BleDevice>>()
+    val devices = remember { mutableListOf<Pair<String, BleDevice>>() }
     FinderMenu(
         value = selected.first,
         items = devices,
@@ -162,43 +178,49 @@ fun BleFinderMenu(
                 ToastManager.showToast(context, context.getString(R.string.key_enable_bluetooth))
                 return@FinderMenu
             }
-            devices.clear()
-            finder?.enableDebug(true)
-            finder?.scan(object : MyoBleFinder.OnFinderUpdate {
-                override fun onStart() {
-                    it.value = true
-                }
-
-                override fun onFound(peripheral: BleDevice) {
-                    devices.add(peripheral.mac to peripheral)
-                }
-
-                override fun onStop(peripherals: List<BleDevice>) {
-                    if (it.value) {
-                        it.value = false
+            CoroutineScope(Dispatchers.IO).launch {
+                devices.clear()
+                finder?.enableDebug(true)
+                finder?.scan(object : MyoBleFinder.OnFinderUpdate {
+                    override fun onStart() {
+                        it.value = true
                     }
-                }
-            })
+
+                    override fun onFound(peripheral: BleDevice) {
+                        devices.removeIf { it.first == peripheral.mac }
+                        devices.add(peripheral.mac to peripheral)
+                    }
+
+                    override fun onStop(peripherals: List<BleDevice>) {
+                        if (it.value) {
+                            it.value = false
+                        }
+                    }
+                })
+            }
         },
-        onSelected = { loading, clicked, expanded, it ->
+        onSelected = { loading, clicked, expanded, connectionState, it ->
             loading.value = false
             val delegate = BleDelegateDefaultImpl(it.second)
             val service = MyoBleService(delegate)
-            CoroutineScope(Dispatchers.Main).launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 if (service.connect()) {
                     connectionState.value = true
                     selected = it
                     onDeviceConnected(service)
                 } else {
                     connectionState.value = false
-                    ToastManager.showToast(context, context.getString(R.string.key_connect_fail))
                 }
                 clicked.value = false
                 expanded.value = false
             }
         },
-        connectionState = connectionState,
-        backgroundColor = Color(0xFFE0E0E0)
+        onUnselected = { connectionState ->
+            onDeviceDisconnected()
+            connectionState.value = false
+            selected = Pair(context.getString(R.string.key_select_devices), null)
+        },
+        backgroundColor = ColorWhite
     )
 }
 
@@ -207,11 +229,10 @@ fun EmgRtWindow(
     modifier: Modifier,
     emgDataState: MutableState<List<Pair<Long, Float?>>>,
 ) {
-    val options = remember { RTWindowOption() }
     RTWindow(
         modifier = modifier,
         data = emgDataState.value,
-        options = options
+        options = GlobalConfig.rtWindowOption
     )
 }
 
@@ -220,16 +241,10 @@ fun GyroWindow(
     modifier: Modifier,
     data: Triple<Float, Float, Float>
 ) {
-    val options = remember {
-        GyroscopeOption(
-            Color(0xFF231815),
-            Color.White
-        )
-    }
     Gyroscope(
         modifier = modifier,
         data = data,
-        options = options
+        options = GlobalConfig.gyroscopeOption
     )
 }
 
@@ -238,14 +253,9 @@ fun CompassWindow(
     modifier: Modifier,
     data: Float
 ) {
-    val options = remember {
-        CompassOption(
-            Color(0xFF231815)
-        )
-    }
     Compass(
         modifier = modifier,
         data = data,
-        options = options
+        options = GlobalConfig.compassOption
     )
 }
