@@ -12,7 +12,7 @@ android {
         minSdk = 27
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -49,6 +49,16 @@ android {
             excludes += "META-INF/**"
             excludes += "**/*.exclude"
         }
+    }
+
+    applicationVariants.all {
+        outputs
+            // default type don't have outputFileName field
+            .map { it as com.android.build.gradle.internal.api.ApkVariantOutputImpl }
+            .all { output ->
+                output.outputFileName = "MyoDecoder-Release-${versionName}.apk"
+                false
+            }
     }
 }
 

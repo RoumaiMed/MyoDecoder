@@ -35,7 +35,7 @@ fun Compass(
             modifier = Modifier
                 .fillMaxSize()
                 .background(options.backgroundColor),
-            painter = painterResource(id = R.drawable.compass),
+            painter = painterResource(id = R.drawable.compass_bg),
             contentDescription = "compass"
         )
         BoxWithConstraints(
@@ -44,7 +44,7 @@ fun Compass(
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val canvasSize = size.height
                 val circleSize = canvasSize * 0.035f
-                val radius = canvasSize * 0.37f
+                val radius = canvasSize * 0.28f
                 val offsetX = (radius * cos(angleRad)).toFloat()
                 val offsetY = (radius * sin(angleRad)).toFloat()
                 drawCircle(
