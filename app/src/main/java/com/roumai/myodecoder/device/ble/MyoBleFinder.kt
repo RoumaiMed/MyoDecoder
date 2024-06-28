@@ -30,9 +30,7 @@ class MyoBleFinder(autoConnect: Boolean) {
     private var callback: OnFinderUpdate? = null
     private val devices = HashMap<String, BleDevice>()
 
-    companion object private
-
-    val TIMEOUT = 12000
+    private companion object val TIMEOUT = 12000
 
     init {
         BleManager.getInstance()

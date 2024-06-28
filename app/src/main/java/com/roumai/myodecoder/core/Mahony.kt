@@ -161,7 +161,18 @@ class Mahony {
     private var pidErr = Point(0.0, 0.0, 0.0)
     private var quaternion = Quaternion(1.0, 0.0, 0.0, 0.0)
 
-    fun updateMag(gyro: Point, acc: Point, mag: Point, deltaTime: Double): Quaternion {
+    private var velocity = Point(0.0, 0.0, 0.0)
+    private var position = Point(0.0, 0.0, 0.0)
+
+    fun velocityInEarth(): Point {
+        return velocity
+    }
+
+    fun positionInEarth(): Point {
+        return position
+    }
+
+    fun update(gyro: Point, acc: Point, mag: Point, deltaTime: Double): Quaternion {
         var q = quaternion.copy()
         var g = gyro.copy()
         var a = acc.copy()
@@ -200,6 +211,43 @@ class Mahony {
         val qDot = q * Quaternion(0.0, g.x, g.y, g.z) * 0.5
         q += qDot * deltaTime
         quaternion = q / q.norm()
+
+        // Update velocity & position
+        var isMoving = anorm > 2
+        if (isMoving) {
+            velocity += accInEarth(acc) * deltaTime
+        } else {
+            velocity += Point(0.0, 0.0, 0.0)
+        }
+        position += velocity * deltaTime
+
         return quaternion
+    }
+
+    private fun accInEarth(acc: Point): Point {
+        var accEarth = quaternion.rotationMatrix() * acc - Point(0.0, 0.0, 1.0)
+        accEarth *= 9.81
+        return accEarth
+    }
+
+    fun angleInEarth(): Point {
+        val r = quaternion.rotationMatrix()
+        val sy = sqrt(r.a.x * r.a.x + r.b.x * r.b.x)
+        val singular = sy < 1e-6
+
+        val p = if (singular.not()) {
+            Point(
+                x = atan2(r.c.y, r.c.z),
+                y = atan2(-r.c.x, sy),
+                z = atan2(r.b.x, r.a.x),
+            )
+        } else {
+            Point(
+                x = atan2(-r.b.z, r.b.y),
+                y = atan2(-r.c.x, sy),
+                z = 0.0,
+            )
+        }
+        return p * (180 / 3.1415927)
     }
 }

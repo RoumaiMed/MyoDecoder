@@ -34,6 +34,10 @@ class MyoBleService(override val delegate: BleDelegate) : CommonBleService(deleg
         }
     }
 
+    suspend fun stopObserveEMG(): Boolean {
+        return delegate.unsubscribe(KEY_EMG)
+    }
+
     suspend fun observeIMU(callback: (Pair<Long, FloatArray>) -> Unit): Boolean {
         var cnt = 0
         var startAt = -1L
@@ -47,6 +51,10 @@ class MyoBleService(override val delegate: BleDelegate) : CommonBleService(deleg
         }
     }
 
+    suspend fun stopObserveIMU(): Boolean {
+        return delegate.unsubscribe(KEY_IMU)
+    }
+
     suspend fun observeRMS(callback: (Pair<Long, IntArray>) -> Unit): Boolean {
         var cnt = 0
         var startAt = -1L
@@ -58,5 +66,9 @@ class MyoBleService(override val delegate: BleDelegate) : CommonBleService(deleg
             val result = Pair(rms.first + startAt, rms.second)
             callback(result)
         }
+    }
+
+    suspend fun stopObserveRMS(): Boolean {
+        return delegate.unsubscribe(KEY_RMS)
     }
 }
