@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
@@ -22,7 +25,12 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.roumai.myodecoder.ui.theme.*
+import com.roumai.myodecoder.ui.theme.ColorGraphite
+import com.roumai.myodecoder.ui.theme.ColorGray
+import com.roumai.myodecoder.ui.theme.ColorLightGray
+import com.roumai.myodecoder.ui.theme.ColorWhite
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.random.Random
@@ -158,7 +166,10 @@ fun RTWindow(
             if (options.showYAxis) {
                 yAxis.reset()
                 yAxis.moveTo(options.horizontalPadding.toPx(), options.verticalPadding.toPx())
-                yAxis.lineTo(options.horizontalPadding.toPx(), size.height - options.verticalPadding.toPx())
+                yAxis.lineTo(
+                    options.horizontalPadding.toPx(),
+                    size.height - options.verticalPadding.toPx()
+                )
                 drawPath(
                     path = yAxis,
                     color = ColorLightGray,
@@ -173,22 +184,33 @@ fun RTWindow(
 
 fun generateMockData(length: Int): List<Pair<Long, Float?>> {
     val startTime = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli()
-    return List(length) { i ->
-        val timestamp = startTime + i
-        val data: Float? = if (i % 20 == 0) null else Random.nextDouble(-10.0, 10.0).toFloat()
-        Pair(timestamp, data)
+
+    val array = ArrayList<Pair<Long, Float?>>()
+    var lastY = 0f
+    for (index in 0 until length) {
+        lastY += Random.nextDouble(-1.0, 1.0).toFloat()
+        lastY %= 10
+        if (index % 2 == 0) {
+            array.add(Pair(startTime + index, null))
+        } else {
+            array.add(Pair(startTime + index, lastY))
+        }
     }
+    return array
 }
 
 @Preview
 @Composable
 fun RTWindowPreview() {
-    val data = generateMockData(100)
+    var data by remember {
+        mutableStateOf(generateMockData(1000))
+    }
+
     Box(modifier = Modifier.size(width = 360.dp, height = 200.dp)) {
         RTWindow(
             modifier = Modifier
                 .fillMaxSize(),
-            data.toMutableList(),
+            data,
             RTWindowOption()
         )
     }
