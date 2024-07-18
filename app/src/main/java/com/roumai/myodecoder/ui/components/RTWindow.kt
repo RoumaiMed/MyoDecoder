@@ -45,7 +45,7 @@ data class RTWindowOption(
     val tickCount: Int = 5,
     val verticalPadding: Dp = 4.dp,
     val horizontalPadding: Dp = 4.dp,
-    val voltRange: Float = 10f,
+    val voltRange: Float = 3.3f,
     val showPacketLoss: Boolean = true,
     val showXAxis: Boolean = true,
     val showYAxis: Boolean = true,
@@ -72,6 +72,10 @@ fun RTWindow(
                 .fillMaxSize()
         ) {
             if (data.size <= 1) return@Canvas
+            path.reset()
+            lossPath.reset()
+            xAxis.reset()
+            yAxis.reset()
             val yMiddle = size.height / 2
             val graphHeight = size.height - 2 * options.verticalPadding.toPx()
             val graphWidth = size.width - 2 * options.horizontalPadding.toPx()
