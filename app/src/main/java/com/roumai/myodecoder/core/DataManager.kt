@@ -23,7 +23,7 @@ object DataManager {
     private val service = mutableStateOf<MyoBleService?>(null)
 
     //    private val emgData = ConcurrentHashMap<Long, Pair<Long, IntArray>>()
-    private val emgSeries = mutableStateTimeSeriesQueueOf(GlobalConfig.DATA_STORE_SIZE)
+    private val emgSeries = mutableStateTimeSeriesQueueOf(GlobalConfig.DATA_STORE_SIZE, GlobalConfig.CHANNEL_NUM)
     private val gyro = mutableStateOf(Triple(0f, 0f, 0f))
     private val angle = mutableStateOf(90f)
     private var recordingDir = ""

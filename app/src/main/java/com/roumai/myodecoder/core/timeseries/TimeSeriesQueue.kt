@@ -24,11 +24,11 @@ data class TimePoint(
     }
 }
 
-fun mutableStateTimeSeriesQueueOf(size: Int): TimeSeriesQueue {
-    return TimeSeriesQueue(size)
+fun mutableStateTimeSeriesQueueOf(size: Int, channelSize: Int = 1): TimeSeriesQueue {
+    return TimeSeriesQueue(size, channelSize)
 }
 
-class TimeSeriesQueue(private val size: Int) {
+class TimeSeriesQueue(private val size: Int, private val channelSize: Int = 1) {
     private val queue = ArrayDeque<TimePoint>(size + 10) // 冗余 10 条记录，避免数据扩容拷贝
     private var topTimestamp = 0L
     private var currentSize = 0
@@ -136,8 +136,9 @@ class TimeSeriesQueue(private val size: Int) {
         val start = expectTimestamp - sampleInterval * windowSize
         val data =
             queue.filter { it.timestamp in start..expectTimestamp }.associateBy { it.timestamp }
+        val zeros = (0.. channelSize).map { 0f }.toFloatArray()
         return (start until expectTimestamp step sampleInterval).map {
-            data[it] ?: TimePoint(it, floatArrayOf(0f), true)
+            data[it] ?: TimePoint(it, zeros, true)
         }.toMutableList()
     }
 
