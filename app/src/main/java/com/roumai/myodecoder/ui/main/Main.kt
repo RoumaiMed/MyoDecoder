@@ -63,29 +63,29 @@ fun Main(
         )
         VerticalSpacer(height = 40.dp)
         val boxWidth = config.screenWidthDp.dp - horizontalPadding * 2
-        Box(
-            modifier = Modifier
-                .padding(horizontal = horizontalPadding)
-                .width(boxWidth)
-                .height(boxWidth)
-        ) {
-            GyroWindow(
-                modifier = Modifier
-                    .fillMaxSize(),
-                data = gyroDataState.value,
-            )
-        }
-        Box(
-            modifier = Modifier
-                .padding(horizontal = horizontalPadding)
-                .width(boxWidth)
-                .height(boxWidth)
-        ) {
-            CompassWindow(
-                modifier = Modifier.fillMaxSize(),
-                data = angleState.value
-            )
-        }
+//        Box(
+//            modifier = Modifier
+//                .padding(horizontal = horizontalPadding)
+//                .width(boxWidth)
+//                .height(boxWidth)
+//        ) {
+//            GyroWindow(
+//                modifier = Modifier
+//                    .fillMaxSize(),
+//                data = gyroDataState.value,
+//            )
+//        }
+//        Box(
+//            modifier = Modifier
+//                .padding(horizontal = horizontalPadding)
+//                .width(boxWidth)
+//                .height(boxWidth)
+//        ) {
+//            CompassWindow(
+//                modifier = Modifier.fillMaxSize(),
+//                data = angleState.value
+//            )
+//        }
         Box(
             modifier = Modifier
                 .padding(horizontal = horizontalPadding)
