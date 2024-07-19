@@ -45,7 +45,7 @@ fun ZoomTime() {
         ) {
             IconButton(
                 modifier = Modifier.fillMaxSize(),
-                onClick = { GlobalConfig.windowSize = 5000 }
+                onClick = { GlobalConfig.windowSize = 2000 }
             ) {
                 Icon(
                     modifier = Modifier.fillMaxSize(),

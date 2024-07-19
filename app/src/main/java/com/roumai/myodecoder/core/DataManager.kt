@@ -1,6 +1,9 @@
 package com.roumai.myodecoder.core
 
 import androidx.compose.runtime.mutableStateOf
+import com.roumai.myodecoder.core.timeseries.TimePoint
+import com.roumai.myodecoder.core.timeseries.TimeSeriesQueue
+import com.roumai.myodecoder.core.timeseries.mutableStateTimeSeriesQueueOf
 import com.roumai.myodecoder.device.ble.MyoBleService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -14,12 +17,13 @@ import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
 import java.lang.Math.toDegrees
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.coroutines.CoroutineContext
 import kotlin.math.atan2
 
 object DataManager {
     private val service = mutableStateOf<MyoBleService?>(null)
-    private val emgData = ConcurrentHashMap<Long, Pair<Long, IntArray>>()
+
+    //    private val emgData = ConcurrentHashMap<Long, Pair<Long, IntArray>>()
+    private val emgSeries = mutableStateTimeSeriesQueueOf(GlobalConfig.DATA_STORE_SIZE)
     private val gyro = mutableStateOf(Triple(0f, 0f, 0f))
     private val angle = mutableStateOf(90f)
     private var recordingDir = ""
@@ -47,16 +51,21 @@ object DataManager {
         DataManager.service.value = service
         serviceJob?.cancel()
         serviceJob = CoroutineScope(Dispatchers.IO).launch {
-            DataManager.service.value?.let {
-                it.observeEMG { dataList ->
+            DataManager.service.value?.let { service ->
+                service.observeEMG { dataList ->
                     dataList.forEach { data ->
-                        addEmg(data.first, data.second)
+                        emgSeries.add(
+                            TimePoint(
+                                data.first,
+                                data.second.map { (it - 8192) / 8192.0f * 1.65f + 0.14f }.toFloatArray() // 0.14V bias.
+                            )
+                        )
                         if (recordEmg.value) {
                             emgCsvFile?.append(data.first, data.second)
                         }
                     }
                 }
-                it.observeIMU { data ->
+                service.observeIMU { data ->
                     if (recordImu.value) {
                         imuCsvFile?.append(data.first, data.second)
                     }
@@ -69,7 +78,7 @@ object DataManager {
                     val mz = data.second[9]
                     updateAngle(mx, my, mz)
                 }
-                it.observeRMS {
+                service.observeRMS {
 
                 }
             }
@@ -78,8 +87,9 @@ object DataManager {
         uiJob = CoroutineScope(newSingleThreadContext("DataProcess")).launch {
             while (isActive && DataManager.service.value != null) {
 //                val emgData = getEmg()
-                val currentAt = System.currentTimeMillis()
-                val emgData = fetchEMG(emgData, (currentAt - GlobalConfig.windowSize) until currentAt, 1)
+//                val currentAt = System.currentTimeMillis()
+                val emgData = fetchEMG(emgSeries, GlobalConfig.windowSize)
+//                val emgData = emgSeries.toSubsequence(GlobalConfig.windowSize).map { Pair(it.timestamp, it.data.firstOrNull()) }.toMutableList()
                 val gyroData = getGyro()
                 val angleData = getAngle()
                 withContext(Dispatchers.Main) {
@@ -126,29 +136,17 @@ object DataManager {
         return path
     }
 
-    fun addEmg(timestamp: Long, data: IntArray) {
-        emgData[timestamp] = Pair(timestamp, data)
-        if (emgData.size > GlobalConfig.DATA_STORE_SIZE) {
-            emgData.keys
-                .toList()
-                .take(emgData.size - GlobalConfig.DATA_STORE_SIZE)
-                .forEach { emgData.remove(it) }
-        }
-    }
-
     private fun fetchEMG(
-        data: ConcurrentHashMap<Long, Pair<Long, IntArray>>,
-        range: LongRange,
-        minInterval: Long, // in ms
+//        data: ConcurrentHashMap<Long, Pair<Long, IntArray>>,
+        data: TimeSeriesQueue,
+        windowSize: Int,
+//        minInterval: Long, // in ms
     ): MutableList<Pair<Long, Float?>> {
-        val result = mutableListOf<Pair<Long, Float?>>()
-
-        for (t in range step minInterval) {
-            val volt = data[t]?.second?.first()?.let {
-                (it - 8192) / 8192.0f * 1.65f
-            }
-            result.add(Pair(t, volt))
-        }
+        val result = data.toFullTimeSeries(
+            expectTimestamp = System.currentTimeMillis(),
+            sampleInterval = 1000L / GlobalConfig.SAMPLE_RATE,
+            windowSize = windowSize,
+        ).map { Pair(it.timestamp, if (it.loss) null else it.data.firstOrNull()) }.toMutableList()
 
         if (GlobalConfig.enableFiltering) {
             var filteredSignal = result.map { it.second?.toDouble() ?: 0.0 }.toDoubleArray()
@@ -167,84 +165,6 @@ object DataManager {
             }
         }
 
-        return result
-    }
-
-    fun getEmg(): MutableList<Pair<Long, Float?>> {
-        val currentAt = System.currentTimeMillis()
-        val lastAt = currentAt - GlobalConfig.windowSize
-        val rawSignal = mutableListOf<Pair<Long, Float>>()
-        val idxArr = BooleanArray((currentAt - lastAt).toInt()) { false }
-        for (ts in lastAt until currentAt) {
-            val data = emgData[ts]?.second?.first()
-            if (data == null) {
-                rawSignal.add(Pair(ts, 0f))
-                idxArr[(ts - lastAt).toInt()] = true
-                continue
-            }
-            val volt = (data - 8192) / 8192.0f * 1.65f
-            rawSignal.add(Pair(ts, volt))
-        }
-        val result = mutableListOf<Pair<Long, Float?>>()
-        if (GlobalConfig.enableFiltering) {
-            var filteredSignal = SignalProcessor.filter(
-                rawSignal.map { it.second.toDouble() }.toDoubleArray(),
-                GlobalConfig.SAMPLE_RATE.toDouble(),
-                Pair(48.0, 52.0)
-            )
-            filteredSignal = SignalProcessor.filter(
-                filteredSignal,
-                GlobalConfig.SAMPLE_RATE.toDouble(),
-                Pair(98.0, 102.0)
-            )
-            filteredSignal = SignalProcessor.filter(
-                filteredSignal,
-                GlobalConfig.SAMPLE_RATE.toDouble(),
-                Pair(148.0, 152.0)
-            )
-            filteredSignal = SignalProcessor.filter(
-                filteredSignal,
-                GlobalConfig.SAMPLE_RATE.toDouble(),
-                Pair(198.0, 202.0)
-            )
-            filteredSignal = SignalProcessor.filter(
-                filteredSignal,
-                GlobalConfig.SAMPLE_RATE.toDouble(),
-                Pair(248.0, 252.0)
-            )
-            filteredSignal = SignalProcessor.filter(
-                filteredSignal,
-                GlobalConfig.SAMPLE_RATE.toDouble(),
-                Pair(298.0, 302.0)
-            )
-            filteredSignal = SignalProcessor.filter(
-                filteredSignal,
-                GlobalConfig.SAMPLE_RATE.toDouble(),
-                Pair(348.0, 352.0)
-            )
-            filteredSignal = SignalProcessor.filter(
-                filteredSignal,
-                GlobalConfig.SAMPLE_RATE.toDouble(),
-                Pair(398.0, 402.0)
-            )
-            filteredSignal = SignalProcessor.filter(
-                filteredSignal,
-                GlobalConfig.SAMPLE_RATE.toDouble(),
-                Pair(448.0, 452.0)
-            )
-            for (i in idxArr.indices) {
-                result.add(
-                    Pair(
-                        rawSignal[i].first,
-                        if (idxArr[i]) null else filteredSignal[i].toFloat()
-                    )
-                )
-            }
-        } else {
-            for (i in idxArr.indices) {
-                result.add(Pair(rawSignal[i].first, if (idxArr[i]) null else rawSignal[i].second))
-            }
-        }
         return result
     }
 

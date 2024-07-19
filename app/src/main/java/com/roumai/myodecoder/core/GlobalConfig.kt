@@ -24,6 +24,6 @@ object GlobalConfig {
         )
     )
 
-    var windowSize by mutableStateOf(5000) // int: ms
+    var windowSize by mutableStateOf(2000) // int: ms
     var enableFiltering by mutableStateOf(false) // judge whether to filter 50HZ and its harmonic
 }
