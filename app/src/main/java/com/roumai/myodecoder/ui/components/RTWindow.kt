@@ -45,10 +45,10 @@ data class RTWindowOption(
     val tickCount: Int = 5,
     val verticalPadding: Dp = 4.dp,
     val horizontalPadding: Dp = 4.dp,
-    val voltRange: Float = 3.3f,
+    val voltRange: Float = 1.65f,
     val showPacketLoss: Boolean = true,
     val showXAxis: Boolean = true,
-    val showYAxis: Boolean = true,
+    val showYAxis: Boolean = false,
     var voltScale: MutableState<Float> = mutableStateOf(1f),
 )
 
@@ -80,23 +80,19 @@ fun RTWindow(
             val graphHeight = size.height - 2 * options.verticalPadding.toPx()
             val graphWidth = size.width - 2 * options.horizontalPadding.toPx()
             val dense = data.size / graphWidth
-            var pathStarted = false
             val initialX = options.horizontalPadding.toPx()
             var lastValidX = 0
             val lineStyle = Stroke(
                 width = if (options.boldLine) 1.2.dp.toPx() else 0.5.dp.toPx(),
             )
+            val zero = yMiddle + 0 / options.voltRange * graphHeight / 2
+            path.moveTo(0f, zero)
             data.forEachIndexed { idx, (ts, voltage) ->
                 val x = (ts - data[0].first) / dense + initialX
                 if (voltage != null) {
                     val volt = voltage * voltScale.value
                     val y = yMiddle + volt / options.voltRange * graphHeight / 2
-                    if (!pathStarted) {
-                        path.moveTo(x, y)
-                        pathStarted = true
-                    } else {
-                        path.lineTo(x, y)
-                    }
+                    path.lineTo(x, y)
                     if (lastValidX != 0 && idx - lastValidX > 1) {
                         drawPath(
                             path = lossPath.apply { lineTo(x, y) },
@@ -119,33 +115,21 @@ fun RTWindow(
                         )
                     }
                 } else {
-                    if (pathStarted) {
-                        drawPath(
-                            path = path,
-                            color = options.signalColor,
-                            style = lineStyle
-                        )
-                        path.reset()
-                        pathStarted = false
-                    }
                     if (options.showPacketLoss) {
                         val rectWidth = graphWidth / data.size
                         drawRect(
                             color = options.packetLossColor,
-                            topLeft = Offset(x - rectWidth / 2, yMiddle - graphHeight / 2),
+                            topLeft = Offset(x - rectWidth / 2 - 1.dp.toPx(), yMiddle - graphHeight / 2),
                             size = Size(rectWidth, graphHeight)
                         )
                     }
                 }
             }
-            if (pathStarted) {
-                drawPath(
-                    path = path,
-                    color = options.signalColor,
-                    style = lineStyle
-                )
-            }
-
+            drawPath(
+                path = path,
+                color = options.signalColor,
+                style = lineStyle
+            )
             xAxis.reset()
             if (options.showXAxis) {
                 val tickCnt = if (data.size > options.tickCount) options.tickCount else data.size

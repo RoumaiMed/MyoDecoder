@@ -134,7 +134,8 @@ class TimeSeriesQueue(private val size: Int) {
         windowSize: Int
     ): MutableList<TimePoint> {
         val start = expectTimestamp - sampleInterval * windowSize
-        val data = queue.filter { it.timestamp in start..expectTimestamp }.map { it.timestamp to it }.toMap()
+        val data =
+            queue.filter { it.timestamp in start..expectTimestamp }.associateBy { it.timestamp }
         return (start until expectTimestamp step sampleInterval).map {
             data[it] ?: TimePoint(it, floatArrayOf(0f), true)
         }.toMutableList()

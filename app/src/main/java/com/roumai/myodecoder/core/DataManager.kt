@@ -57,7 +57,7 @@ object DataManager {
                         emgSeries.add(
                             TimePoint(
                                 data.first,
-                                data.second.map { (it - 8192) / 8192.0f * 1.65f }.toFloatArray()
+                                data.second.map { (it - 8192) / 8192.0f * 1.65f + 0.14f }.toFloatArray() // 0.14V bias.
                             )
                         )
                         if (recordEmg.value) {
@@ -146,7 +146,7 @@ object DataManager {
             expectTimestamp = System.currentTimeMillis(),
             sampleInterval = 1000L / GlobalConfig.SAMPLE_RATE,
             windowSize = windowSize,
-        ).map { Pair(it.timestamp, it.data.firstOrNull()) }.toMutableList()
+        ).map { Pair(it.timestamp, if (it.loss) null else it.data.firstOrNull()) }.toMutableList()
 
         if (GlobalConfig.enableFiltering) {
             var filteredSignal = result.map { it.second?.toDouble() ?: 0.0 }.toDoubleArray()
