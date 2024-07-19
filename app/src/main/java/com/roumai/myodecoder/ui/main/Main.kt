@@ -35,6 +35,7 @@ fun Main(
     val emgDataState = remember { mutableStateOf<List<Pair<Long, Float?>>>(emptyList()) }
     val gyroDataState = remember { mutableStateOf(Triple(0f, 0f, 0f)) }
     val angleState = remember { mutableStateOf(90f) }
+    val imu9DataState = remember { mutableStateOf(List(9) { 0.1f }) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -52,7 +53,8 @@ fun Main(
                     it,
                     onEmgCallback = { emg -> emgDataState.value = emg },
                     onGyroCallback = { gyro -> gyroDataState.value = gyro },
-                    onAngleCallback = { angle -> angleState.value = angle }
+                    onAngleCallback = { angle -> angleState.value = angle },
+                    onImu9Callback = { imu9 -> imu9DataState.value = imu9 }
                 )
             },
             onDeviceDisconnected = {
@@ -82,6 +84,18 @@ fun Main(
             CompassWindow(
                 modifier = Modifier.fillMaxSize(),
                 data = angleState.value
+            )
+        }
+        Box(
+            modifier = Modifier
+                .padding(horizontal = horizontalPadding)
+                .width(boxWidth)
+                .height(boxWidth),
+            contentAlignment = Alignment.Center
+        ) {
+            MotionWindow(
+                modifier = Modifier.fillMaxSize(),
+                data = imu9DataState.value
             )
         }
         VerticalSpacer(height = 40.dp)
@@ -257,5 +271,17 @@ fun CompassWindow(
         modifier = modifier,
         data = data,
         options = GlobalConfig.compassOption
+    )
+}
+
+@Composable
+fun MotionWindow(
+    modifier: Modifier,
+    data: List<Float>
+) {
+    Motion(
+        modifier = modifier,
+        data = data,
+        options = GlobalConfig.motionOption
     )
 }

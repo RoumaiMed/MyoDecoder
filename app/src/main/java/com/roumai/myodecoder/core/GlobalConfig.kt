@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.roumai.myodecoder.ui.components.CompassOption
 import com.roumai.myodecoder.ui.components.GyroscopeOption
+import com.roumai.myodecoder.ui.components.MotionOption
 import com.roumai.myodecoder.ui.components.RTWindowOption
 import com.roumai.myodecoder.ui.theme.COLOR_BACKGROUND
 import com.roumai.myodecoder.ui.theme.ColorWhite
@@ -23,6 +24,9 @@ object GlobalConfig {
             backgroundColor = COLOR_BACKGROUND
         )
     )
+    var motionOption by mutableStateOf(MotionOption(
+        backgroundColor = COLOR_BACKGROUND
+    ))
 
     var windowSize by mutableStateOf(2000) // int: ms
     var enableFiltering by mutableStateOf(false) // judge whether to filter 50HZ and its harmonic

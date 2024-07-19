@@ -26,6 +26,7 @@ object DataManager {
     private val emgSeries = mutableStateTimeSeriesQueueOf(GlobalConfig.DATA_STORE_SIZE, GlobalConfig.CHANNEL_NUM)
     private val gyro = mutableStateOf(Triple(0f, 0f, 0f))
     private val angle = mutableStateOf(90f)
+    private val imu9 = mutableStateOf(List(9) { 0.1f })
     private var recordingDir = ""
     private val recordEmg = mutableStateOf(false)
     private var emgCsvFile: CSV? = null
@@ -46,7 +47,8 @@ object DataManager {
         service: MyoBleService,
         onEmgCallback: (List<Pair<Long, Float?>>) -> Unit,
         onGyroCallback: (Triple<Float, Float, Float>) -> Unit,
-        onAngleCallback: (Float) -> Unit
+        onAngleCallback: (Float) -> Unit,
+        onImu9Callback: (List<Float>) -> Unit
     ) {
         DataManager.service.value = service
         serviceJob?.cancel()
@@ -69,6 +71,9 @@ object DataManager {
                     if (recordImu.value) {
                         imuCsvFile?.append(data.first, data.second)
                     }
+                    val ax = data.second[1]
+                    val ay = data.second[2]
+                    val az = data.second[3]
                     val gx = data.second[4]
                     val gy = data.second[5]
                     val gz = data.second[6]
@@ -77,6 +82,7 @@ object DataManager {
                     val my = data.second[8]
                     val mz = data.second[9]
                     updateAngle(mx, my, mz)
+                    updateImu9(listOf(ax, ay, az, gx, gy, gz, mx, my, mz))
                 }
                 service.observeRMS {
 
@@ -92,10 +98,12 @@ object DataManager {
 //                val emgData = emgSeries.toSubsequence(GlobalConfig.windowSize).map { Pair(it.timestamp, it.data.firstOrNull()) }.toMutableList()
                 val gyroData = getGyro()
                 val angleData = getAngle()
+                val imu9Data = getImu9()
                 withContext(Dispatchers.Main) {
                     onEmgCallback(emgData)
                     onGyroCallback(gyroData.value)
                     onAngleCallback(angleData.value)
+                    onImu9Callback(imu9Data.value)
                 }
                 delay(10L)
             }
@@ -184,4 +192,10 @@ object DataManager {
     }
 
     fun getAngle() = angle
+
+    fun updateImu9(data: List<Float>) {
+        imu9.value = data
+    }
+
+    fun getImu9() = imu9
 }
