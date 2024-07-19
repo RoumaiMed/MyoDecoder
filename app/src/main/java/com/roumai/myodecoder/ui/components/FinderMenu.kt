@@ -83,7 +83,11 @@ fun FinderMenu(
                         .fillMaxWidth(0.9f)
                         .clickable(onClick = {
                             if (!connectionState.value) {
-                                expanded.value = !expanded.value
+                                if (items.isNotEmpty()) {
+                                    expanded.value = !expanded.value
+                                } else {
+                                    expanded.value = true
+                                }
                             }
                         }),
                     horizontalAlignment = Alignment.CenterHorizontally,
