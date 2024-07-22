@@ -1,5 +1,7 @@
 package com.roumai.myodecoder.core.timeseries
 
+import java.lang.IndexOutOfBoundsException
+
 data class TimePoint(
     val timestamp: Long,
     val data: FloatArray,
@@ -133,21 +135,31 @@ class TimeSeriesQueue(private val size: Int, private val channelSize: Int = 1) {
         sampleInterval: Long,
         windowSize: Int
     ): MutableList<TimePoint> {
+        val expectTimestamp = queue.lastOrNull()?.timestamp ?: expectTimestamp
         val start = expectTimestamp - sampleInterval * windowSize
         val filtered = ArrayList<TimePoint>()
-        with(queue.iterator()) {
-            @Synchronized
-            while (hasNext()) {
-                val next = next() ?: continue
-                if (next.timestamp in start..expectTimestamp) {
-                    filtered.add(next)
+        try {
+            val maxSize = TimeSeriesQueue@this.size
+            with(queue) {
+                var index = 0
+                @Synchronized
+                while (index < this.size && index < maxSize) {
+                    val next = queue.getOrNull(index)
+                    if (next != null) {
+                        if (next.timestamp in start..expectTimestamp) {
+                            filtered.add(next)
+                        }
+                    }
+                    index++
                 }
             }
+        } catch (e: IndexOutOfBoundsException) {
+            e.printStackTrace()
         }
         val data = filtered.associateBy { it.timestamp }
 //        val data =
 //            queue.filter { it.timestamp in start..expectTimestamp }.associateBy { it.timestamp }
-        val zeros = (0.. channelSize).map { 0f }.toFloatArray()
+        val zeros = (0..channelSize).map { 0f }.toFloatArray()
         return (start until expectTimestamp step sampleInterval).map {
             data[it] ?: TimePoint(it, zeros, true)
         }.toMutableList()
