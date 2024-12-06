@@ -27,7 +27,7 @@ class MyoBleService(override val delegate: BleDelegate) : CommonBleService(deleg
         return delegate.subscribe(KEY_EMG) {
             if (cnt++ < 5) return@subscribe // skip first 5 packet #TODO
             // emg protocol: decode here
-            val emg = MyoProtocolEMG.decode(stream = it, channelSize = 16) ?: return@subscribe
+            val emg = MyoProtocolEMG.decode(stream = it, channelSize = 3) ?: return@subscribe
             if (startAt == -1L) startAt = System.currentTimeMillis() - emg[0].first
             val result = emg.map { data -> Pair(data.first + startAt, data.second) }
             callback(result)

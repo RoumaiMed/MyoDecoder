@@ -35,6 +35,7 @@ object DataManager {
 
     fun setRecordingDir(dir: String) {
         recordingDir = dir
+        println("[Record Dir]: $dir")
     }
 
     fun getRecordingDir() = recordingDir
