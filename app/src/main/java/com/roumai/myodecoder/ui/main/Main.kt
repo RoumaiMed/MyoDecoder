@@ -4,9 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -102,7 +104,7 @@ fun Main(
         SciBox(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp),
+                .height(140.dp),
             horizontalPadding = horizontalPadding,
             backgroundColor = COLOR_BACKGROUND
         ) {
@@ -118,7 +120,8 @@ fun Main(
                 EmgRtWindow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(240.dp),
+//                        .height(240.dp),
+                        .height(100.dp),
                     emgDataState = emgDataState
                 )
             }
@@ -243,11 +246,12 @@ fun EmgRtWindow(
     modifier: Modifier,
     emgDataState: MutableState<List<Pair<Long, Float?>>>,
 ) {
-    RTWindow(
-        modifier = modifier,
-        data = emgDataState.value,
-        options = GlobalConfig.rtWindowOption
-    )
+//    RTWindow(
+//        modifier = modifier,
+//        data = emgDataState.value,
+//        options = GlobalConfig.rtWindowOption
+//    )
+    Text(text = "\tEMG Record X3 [${emgDataState.value.firstOrNull()?.second}]", color = Color.White)
 }
 
 @Composable

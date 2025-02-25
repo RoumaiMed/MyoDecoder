@@ -18,6 +18,20 @@ object MyoProtocolIMU {
             value = value.or(stream[index++].toUByte().toInt())
             data[i] = value / 1000.0f
         }
-        return Pair(ts.toLong(), data)
+        return Pair(
+            ts.toLong(),
+            floatArrayOf(
+                data[0],        // temperature
+                -data[1],       // ax
+                data[2],        // ay
+                -data[3],       // az
+                -data[4],       // gx
+                data[5],        // gy
+                data[6],        // gz
+                -data[7],       // mx
+                -data[8],       // my
+                data[9],        // mz
+            )
+        )
     }
 }
